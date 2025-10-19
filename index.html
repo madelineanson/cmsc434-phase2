@@ -7,13 +7,102 @@
     <title>Budget App</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 
 <body>
     <div id="tablet-screen">
         <div class="app-screens" id="finance-entry-screen">
             <img id="app-logo" src="assets\Screenshot 2025-10-19 133734.jpg">
-            <h1>Finance Entry</h1>
+            <div id="finance-entry-content">
+                <!-- popup overlay (transaction/activity details) -->
+                <div id="popupOverlay">
+                    <div id="popupContent">
+                        <h2>Full transaction Details Go Here</h2>
+                        <p>content content content</p>
+                        <button id="closePopupBtn" class="closePopupBtn">Back</button>
+                    </div>
+                </div>
+
+                <!-- popup overlay (form for creating a new finance entry) -->
+                <div id="newEntryOverlay">
+                    <div id="newEntryContent">
+                        <h2>New Finance Entry</h2>
+                        <form id="newEntryForm" class="popup-form">
+                            <label for="entryDate">Date</label>
+                            <input type="date" id="entryDate" name="entryDate" required>
+
+                            <fieldset class="entry-type">
+                                <legend>Type</legend>
+                                <label><input type="radio" name="entryType" value="debit" checked> Debit</label>
+                                <label><input type="radio" name="entryType" value="credit"> Credit</label>
+                            </fieldset>
+
+                            <label for="entryAmount">Amount</label>
+                            <input type="number" id="entryAmount" name="entryAmount" step="0.01" min="0" required>
+
+                            <label for="entryDescription">Description</label>
+                            <input type="text" id="entryDescription" name="entryDescription" maxlength="200">
+
+                            <label for="entryCategory">Category</label>
+                            <select id="entryCategory" name="entryCategory">
+                                <option value="groceries">Groceries</option>
+                                <option value="fun">Fun</option>
+                                <option value="school">School</option>
+                                <option value="rent">Rent</option>
+                            </select>
+
+                            <div style="margin-top:1rem;">
+                                <button type="submit" id="saveEntryBtn">Save</button>
+                                <button type="button" id="closeNewEntryBtn" class="closePopupBtn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <button id="new-entry-button">+ Entry</button>
+                <h1 id="recent-activity-header">Recent Activity:</h1>
+                <div id="recent-activity">
+                    <button class="rounded-rectangle openPopupBtn">
+                        <div class="details">
+                            <p class="date">10/18/25</p>
+                            <p class="charge-or-credit">Charge</p>
+                            <p class="amount-minus">-$128.47</p>
+                        </div>
+                        <div class="about">
+                            <p class="description"><strong>Description:</strong> Bought Fuentes textbook for Spanish
+                                class</p>
+                            <p class="category"><strong>Category:</strong> School</p>
+                        </div>
+                    </button>
+
+                    <button class="rounded-rectangle openPopupBtn">
+                        <div class="details">
+                            <p class="date">10/9/25</p>
+                            <p class="charge-or-credit">Credit</p>
+                            <p class="amount-plus">+$128.47</p>
+                        </div>
+                        <div class="about">
+                            <p class="description"><strong>Description:</strong> Payday!</p>
+                            <p class="recurring">(Recurring Every 2 Weeks)</p>
+                        </div>
+                    </button>
+
+                    <button class="rounded-rectangle openPopupBtn">
+                        <div class="details">
+                            <p class="date">9/27/25</p>
+                            <p class="charge-or-credit">Charge</p>
+                            <p class="amount-minus">-$128.47</p>
+                        </div>
+                        <div class="about">
+                            <p class="description"><strong>Description:</strong> Mcdonald's</p>
+                            <p class="category"><strong>Category:</strong> Fun</p>
+                        </div>
+                    </button>
+                    <button id="all-activity-button">All Activity</button>
+                </div>
+            </div>
             <div class="navbar">
                 <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i></a>
                 <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i></a>
