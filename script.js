@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 category: newEntryForm.entryCategory.value
             };
             console.log('New entry submitted:', data);
-            // TODO: later append to the rectangles. for now just close and reset.
+            // todo later: append to the rectangles. for now just close and reset.
+            // store in localStorage to do this
             newEntryForm.reset();
             entryDate.value = new Date().toISOString().slice(0, 10);
             closeNewEntry();
