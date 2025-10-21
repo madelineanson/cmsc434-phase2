@@ -360,3 +360,89 @@ body {
     font-size: 1.1rem;
     color: #333;
 }
+
+#recent-activity {
+    max-height: calc(100vh - 25rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 2rem;
+    margin-bottom: 7rem; /* Space for fixed navbar */
+}
+
+/* Scrollbar styling */
+#recent-activity::-webkit-scrollbar {
+    width: 10px;
+}
+
+#recent-activity::-webkit-scrollbar-track {
+    background: rgba(171, 185, 209, 0.2);
+    border-radius: 10px;
+}
+
+#recent-activity::-webkit-scrollbar-thumb {
+    background: #4B628B;
+    border-radius: 10px;
+}
+
+#recent-activity::-webkit-scrollbar-thumb:hover {
+    background: #3A4A6E;
+}
+
+.rounded-rectangle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    width: 90%;
+    height: 7.5rem;
+    background-color: #ABB9D1;
+    border-radius: 20px;
+    box-shadow: 10px 10px 5px rgb(96, 95, 95);
+    margin: 2rem auto 0;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rounded-rectangle:hover {
+    transform: translateY(-2px);
+    box-shadow: 12px 12px 8px rgb(96, 95, 95);
+}
+
+
+.closePopupBtn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #4B628B;
+    color: #F4FBFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.closePopupBtn:hover {
+    background-color: #3A4A6E;
+}
+
+
+.popup-form #saveEntryBtn {
+    background-color: #4B628B;
+    color: #fff;
+    margin-right: 0.5rem;
+}
+
+.popup-form #saveEntryBtn:hover {
+    background-color: #3A4A6E;
+}
+
+.popup-form .closePopupBtn {
+    background-color: #aaa;
+    color: #fff;
+}
+
+.popup-form .closePopupBtn:hover {
+    background-color: #888;
+}
+
