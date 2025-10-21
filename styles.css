@@ -307,3 +307,56 @@ body {
 .rounded-rectangle .about {
     padding-top: 0.2rem;
 }
+
+#profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    margin-bottom: 8rem;
+}
+
+.profile-card {
+    background-color: #ABB9D1;
+    border-radius: 20px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 10px 10px 5px rgb(96, 95, 95);
+}
+
+.profile-icon {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.profile-icon i {
+    font-size: 6rem;
+    color: #4B628B;
+}
+
+.profile-info {
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(75, 98, 139, 0.2);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row label {
+    font-weight: 600;
+    color: #4B628B;
+    font-size: 1.1rem;
+}
+
+.info-row span {
+    font-size: 1.1rem;
+    color: #333;
+}
