@@ -146,16 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 id: Date.now() // unique ID for each entry
             };
 
-            // Add to entries array
             entries.push(data);
-
-            // Save to localStorage
             localStorage.setItem('financeEntries', JSON.stringify(entries));
-
-            // Re-render the list
             renderEntries();
 
-            // Reset form and close
             newEntryForm.reset();
             entryDate.value = new Date().toISOString().slice(0, 10);
             closeNewEntry();
@@ -251,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (timeRange === 'monthly') intervalLengthMs = 30 * 24 * 60 * 60 * 1000;
             else intervalLengthMs = 365 * 24 * 60 * 60 * 1000;
 
-            // Sort newest to oldest
+            // sort by transaction date (newest top)
             const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
             const latestDate = now;
             const earliestDate = new Date(latestDate - intervalLengthMs * intervals);

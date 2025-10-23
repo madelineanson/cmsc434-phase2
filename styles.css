@@ -401,10 +401,8 @@ body {
     overflow-x: hidden;
     padding-bottom: 2rem;
     margin-bottom: 7rem;
-    /* Space for fixed navbar */
 }
 
-/* Scrollbar styling */
 #recent-activity::-webkit-scrollbar {
     width: 10px;
 }
