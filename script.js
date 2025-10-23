@@ -154,4 +154,27 @@ document.addEventListener('DOMContentLoaded', function () {
             closeNewEntry();
         });
     }
+
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+
+        var data = google.visualization.arrayToDataTable([
+          ['Task', 'Dollars'],
+          ['Savings', 2000],
+          ['School', 1500],
+          ['Work', 1000],
+          ['Groceries', 300],
+          ['Fun', 200]
+        ]);
+
+        var options = {
+          title: 'October'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+
+        chart.draw(data, options);
+      }
 });

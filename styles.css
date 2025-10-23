@@ -446,3 +446,16 @@ body {
     background-color: #888;
 }
 
+.budget-header {
+    margin-left: 5%;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+#pie-container{
+    width: 50%; 
+    height: 200%; 
+    margin: 0; 
+    padding: 0;
+    background-color: #D0E8F5;
+}
