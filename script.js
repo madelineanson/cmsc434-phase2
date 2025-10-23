@@ -162,33 +162,44 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ✅ Load Google Charts safely (for budget.html)
     if (document.getElementById('piechart')) {
-        const script = document.createElement('script');
-        script.src = 'https://www.gstatic.com/charts/loader.js';
-        script.onload = () => {
-            google.charts.load('current', { 'packages': ['corechart'] });
-            google.charts.setOnLoadCallback(drawChart);
+        google.charts.load('current', { packages: ['corechart'] });
+        google.charts.setOnLoadCallback(drawPie);
 
-            function drawChart() {
-                var data = google.visualization.arrayToDataTable([
-                    ['Task', 'Dollars'],
-                    ['Savings', 2000],
-                    ['School', 1500],
-                    ['Work', 1000],
-                    ['Groceries', 300],
-                    ['Fun', 200]
-                ]);
+        function drawPie() {
+            const data = google.visualization.arrayToDataTable([
+                ['Category', 'Amount'],
+                ['Groceries', 300],
+                ['Fun', 120],
+                ['School', 220],
+                ['Rent', 800]
+            ]);
 
-                var options = { title: 'October' };
-                var chart = new google.visualization.PieChart(document.getElementById('piechart'));
-                chart.draw(data, options);
-            }
-        };
-        document.head.appendChild(script);
+            const options = {
+                backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
+                chartArea: { left: '5%', top: '5%', width: '90%', height: '90%' },
+                legend: { position: 'none' },
+                pieHole: 0,
+                //   pieSliceText: 'percentage',
+                pieSliceText: 'label',
+                pieSliceTextStyle: {
+                    fontSize: 18,
+                    color: '#ffffff',
+                    bold: true
+                },
+                // later: implement so if the user selects a color close to white, the pieslicetextcolor is dark
+                tooltip: { trigger: 'hover', text: 'both' }
+            };
+
+            const chart = new google.visualization.PieChart(document.getElementById('piechart'));
+            chart.draw(data, options);
+        }
+
+        window.addEventListener('resize', () => {
+            if (google.visualization && google.visualization.events) drawPie();
+        });
     }
 
-    // ✅ Stats stuff (for stats.html)
     const chartCanvas = document.getElementById('budgetChart');
     if (chartCanvas) {
         const ctx = chartCanvas.getContext('2d');
@@ -295,4 +306,218 @@ document.addEventListener('DOMContentLoaded', function () {
         applyBtn.addEventListener('click', updateChart);
         updateChart();
     }
+
+    // budget-plans popup
+
+    const newPlanButton = document.getElementById('new-plan-button');
+    const newPlanOverlay = document.getElementById('newPlanOverlay');
+    const closeNewPlanBtn = document.getElementById('closeNewPlanBtn');
+    const newPlanForm = document.getElementById('newPlanForm');
+    const planMonth = document.getElementById('planMonth');
+    const planTotal = document.getElementById('planTotal');
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    const categoriesContainer = document.getElementById('categoriesContainer');
+    const categoriesWarning = document.getElementById('categoriesWarning');
+    const savePlanBtn = document.getElementById('savePlanBtn');
+    const deletePlanBtn = document.getElementById('deletePlanBtn');
+    const plansList = document.getElementById('plans-list');
+    const newPlanTitle = document.getElementById('newPlanTitle');
+
+    let budgetPlans = JSON.parse(localStorage.getItem('budgetPlans')) || [];
+    let editingPlanId = null; // null => creating new
+
+    function formatMonthLabel(date) {
+        return date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function populateMonthOptions() {
+        planMonth.innerHTML = '';
+        const today = new Date();
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            const opt = document.createElement('option');
+            opt.value = d.toISOString().slice(0,7);
+            opt.textContent = formatMonthLabel(d);
+            planMonth.appendChild(opt);
+        }
+    }
+
+    function createCategoryRow(cat = { name:'', amount:0 }) {
+        const row = document.createElement('div');
+        row.className = 'plan-category-row';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Category name';
+        nameInput.value = cat.name;
+        nameInput.required = true;
+
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.min = '0';
+        amountInput.step = '0.01';
+        amountInput.placeholder = 'Amount';
+        amountInput.value = cat.amount || 0;
+        amountInput.required = true;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'removeCategory';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+            row.remove();
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(amountInput);
+        row.appendChild(removeBtn);
+
+        return row;
+    }
+
+    function openNewPlan(plan = null) {
+        populateMonthOptions();
+        categoriesContainer.innerHTML = '';
+        categoriesWarning.style.display = 'none';
+        editingPlanId = null;
+        deletePlanBtn.style.display = 'none';
+        newPlanTitle.textContent = plan ? 'Edit Plan' : 'New Plan';
+
+        if (plan) {
+            editingPlanId = plan.id;
+            const optVal = plan.month;
+            if (![...planMonth.options].some(o => o.value === optVal)) {
+                const tempOpt = document.createElement('option');
+                tempOpt.value = optVal;
+                const [y,m] = optVal.split('-');
+                tempOpt.textContent = new Date(y, m-1, 1).toLocaleString(undefined, { month:'long', year:'numeric' });
+                planMonth.appendChild(tempOpt);
+            }
+            planMonth.value = optVal;
+            planTotal.value = plan.total.toFixed(2);
+            (plan.categories || []).forEach(c => categoriesContainer.appendChild(createCategoryRow(c)));
+            deletePlanBtn.style.display = 'inline-block';
+        } else {
+            planMonth.selectedIndex = 0;
+            planTotal.value = '';
+            categoriesContainer.appendChild(createCategoryRow());
+        }
+
+        newPlanOverlay.style.display = 'flex';
+    }
+
+    function closeNewPlan() {
+        newPlanOverlay.style.display = 'none';
+    }
+
+    function renderPlans() {
+        plansList.innerHTML = '';
+        if (!budgetPlans.length) {
+            plansList.textContent = 'No saved plans.';
+            return;
+        }
+        budgetPlans.forEach(plan => {
+            const a = document.createElement('a');
+            a.href = '#';
+            a.className = 'plan-button';
+            a.dataset.id = plan.id;
+            const label = document.createElement('span');
+            label.className = 'plan-month';
+            label.textContent = new Date(plan.month + '-01').toLocaleString(undefined, { month:'long', year:'numeric' });
+            const icon = document.createElement('i');
+            icon.className = 'fa-solid fa-pen-to-square';
+            a.appendChild(label);
+            a.appendChild(icon);
+
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                openNewPlan(plan);
+            });
+
+            plansList.appendChild(a);
+        });
+    }
+
+    // add category
+    addCategoryBtn?.addEventListener('click', () => {
+        const count = categoriesContainer.querySelectorAll('.plan-category-row').length;
+        if (count >= 10) return;
+        categoriesContainer.appendChild(createCategoryRow());
+    });
+
+    // open new plan overlay
+    newPlanButton?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openNewPlan(null);
+    });
+
+    // close handlers
+    closeNewPlanBtn?.addEventListener('click', closeNewPlan);
+    newPlanOverlay?.addEventListener('click', (e) => {
+        if (e.target === newPlanOverlay) closeNewPlan();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && newPlanOverlay && newPlanOverlay.style.display === 'flex') closeNewPlan();
+    });
+
+    // delete plan
+    deletePlanBtn?.addEventListener('click', () => {
+        if (!editingPlanId) return;
+        if (!confirm('Delete this plan?')) return;
+        budgetPlans = budgetPlans.filter(p => p.id !== editingPlanId);
+        localStorage.setItem('budgetPlans', JSON.stringify(budgetPlans));
+        renderPlans();
+        closeNewPlan();
+    });
+
+    // save plan (create or update)
+    newPlanForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const monthVal = planMonth.value;
+        const totalVal = parseFloat(planTotal.value || 0);
+        const categoryRows = Array.from(categoriesContainer.querySelectorAll('.plan-category-row'));
+        const categories = categoryRows.map(row => {
+            const name = row.querySelector('input[type="text"]').value.trim();
+            const amount = parseFloat(row.querySelector('input[type="number"]').value || 0);
+            return { name, amount };
+        });
+
+        // mandatory fields
+        if (categories.length === 0) {
+            alert('Add at least one category.');
+            return;
+        }
+        if (categories.some(c => !c.name)) {
+            alert('All categories must have a name.');
+            return;
+        }
+
+        const sum = categories.reduce((s, c) => s + (isNaN(c.amount) ? 0 : c.amount), 0);
+        if (Math.abs(sum - totalVal) > 0.009) {
+            categoriesWarning.style.display = 'block';
+            return;
+        }
+        categoriesWarning.style.display = 'none';
+
+        const planObj = {
+            id: editingPlanId || Date.now(),
+            month: monthVal,
+            total: totalVal,
+            categories
+        };
+
+        if (editingPlanId) {
+            budgetPlans = budgetPlans.map(p => p.id === editingPlanId ? planObj : p);
+        } else {
+            budgetPlans.push(planObj);
+        }
+
+        localStorage.setItem('budgetPlans', JSON.stringify(budgetPlans));
+        renderPlans();
+        closeNewPlan();
+    });
+
+    // render to starttt!
+    renderPlans();
+
 });

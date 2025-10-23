@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+
+<body>
+    <div id="tablet-screen">
+        <div class="app-screens" id="budget-screen">
+            <img id="app-logo" src="assets\Screenshot 2025-10-19 133734.jpg">
+            <!-- <h1 class="budget-header">Obtober</h1> -->
+            <a href="budget.html" class="back-button"><i class="fa-solid fa-arrow-left"></i><span
+                    class="back-text">Back</span></a>
+            <h1 class="budget-header">Current Plans:</h1>
+            <button id="new-plan-button">+ Plan</button>
+            <div id="plans-list"></div>
+
+            <div id="newPlanOverlay" style="display:none">
+                <div id="newPlanContent">
+                    <h2 id="newPlanTitle">New Plan</h2>
+                    <form id="newPlanForm" class="popup-form">
+                        <label for="planMonth">Month</label>
+                        <select id="planMonth" name="planMonth" required></select>
+
+                        <label for="planTotal">Monthly Total ($)</label>
+                        <input type="number" id="planTotal" name="planTotal" step="0.01" min="0" required>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:.5rem;">
+                            <label style="margin:0;">Categories (max 10)</label>
+                            <button type="button" id="addCategoryBtn">+ Add Category</button>
+                        </div>
+
+                        <div id="categoriesContainer" style="margin-top:.5rem;"></div>
+
+                        <p id="categoriesWarning" style="color:#C52816; display:none; font-size:0.9rem;">Totals must equal
+                            monthly total.</p>
+
+                        <div style="margin-top:1rem;">
+                            <button type="submit" id="savePlanBtn">Save</button>
+                            <button type="button" id="closeNewPlanBtn" class="closePopupBtn">Cancel</button>
+                            <button type="button" id="deletePlanBtn"
+                                style="display:none; background:#C52816; color:#fff; margin-left:.5rem;">Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="navbar">
+                <a href="budget.html" class="nav-icon active"><i class="fa-solid fa-chart-pie"></i></a>
+                <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i></a>
+                <a href="index.html" class="nav-icon"><i class="fa-solid fa-dollar-sign"></i></a>
+                <a href="profile.html" class="nav-icon"><i class="fa-solid fa-user"></i></a>
+            </div>
+        </div>
+    </div>
+    <script rel="script" src="script.js"></script>
+</body>
+
+</html>
