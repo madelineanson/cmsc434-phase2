@@ -3,12 +3,72 @@ document.addEventListener('DOMContentLoaded', function () {
     let entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
     let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
 
+    // the default categories i made are used when there's no plan for current month
+    const defaultCategories = [
+        'Fun', 'Groceries', 'Rent', 'Utilities',
+        'Insurance', 'Education', 'Transportation', 'Health'
+    ];
+
+    function getCurrentMonthKey() {
+        // returns YYYY-MM for current month
+        const d = new Date();
+        return d.toISOString().slice(0,7);
+    }
+
+    function normalizeStoredPlans() {
+        const raw = JSON.parse(localStorage.getItem('budgetPlans') || '[]');
+        let changed = false;
+        const normalized = raw.map(p => {
+            const plan = Object.assign({}, p);
+            if (typeof plan.categories === 'string') {
+                const parts = plan.categories.split(',').map(s => s.trim()).filter(Boolean);
+                plan.categories = parts.map(name => ({ name, amount: 0 }));
+                changed = true;
+            } else if (Array.isArray(plan.categories)) {
+                plan.categories = plan.categories.map(c => {
+                    if (typeof c === 'string') return { name: c, amount: 0 };
+                    if (c && typeof c === 'object') return { name: (c.name || ''), amount: Number(c.amount) || 0 };
+                    return { name: '', amount: 0 };
+                });
+            } else {
+                plan.categories = [];
+                changed = true;
+            }
+            return plan;
+        });
+        if (changed) localStorage.setItem('budgetPlans', JSON.stringify(normalized));
+        return normalized;
+    }
+
+    function getCategoriesForMonth(monthKey) {
+        const plans = normalizeStoredPlans();
+        const plan = plans.find(p => p.month === monthKey);
+        if (plan && Array.isArray(plan.categories) && plan.categories.length) {
+            return plan.categories.map(c => c.name).filter(Boolean);
+        }
+        return defaultCategories.slice();
+    }
+
+    function populateEntryCategorySelect() {
+        const select = document.getElementById('entryCategory');
+        if (!select) return;
+        const monthKey = getCurrentMonthKey();
+        const categories = getCategoriesForMonth(monthKey);
+
+        select.innerHTML = '';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = (cat || '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+            opt.textContent = cat;
+            select.appendChild(opt);
+        });
+    }
+
     // existing detail popup
     const closePopupBtn = document.getElementById('closePopupBtn');
     const popupOverlay = document.getElementById('popupOverlay');
     const popupContent = document.getElementById('popupContent');
 
-    // ensure these helpers exist before any popup markup tries to reference them
     function closeOverlay() {
         if (popupOverlay) popupOverlay.style.display = 'none';
     }
@@ -282,11 +342,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
         e.preventDefault();
         if (entryDate) entryDate.value = new Date().toISOString().slice(0,10);
-        // reset form fields
         newEntryForm.reset();
         showIncomeOptions(false);
         recurrenceControls.style.display = 'none';
         savingsControls.style.display = 'none';
+        populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
         newEntryOverlay.style.display = 'flex';
     });
     if (closeNewEntryBtn) closeNewEntryBtn.addEventListener('click', function () {
@@ -704,10 +764,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         localStorage.setItem('budgetPlans', JSON.stringify(budgetPlans));
         renderPlans();
+        populateEntryCategorySelect(); // <-- refresh entry categories if plan affects current month
         closeNewPlan();
     });
 
     // render to starttt!
     renderPlans();
 
+    // on page load populate entry categories
+    populateEntryCategorySelect();
+
+    // open new-entry overlay (update to populate categories each time)
+    if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (entryDate) entryDate.value = new Date().toISOString().slice(0,10);
+        newEntryForm.reset();
+        showIncomeOptions(false);
+        recurrenceControls.style.display = 'none';
+        savingsControls.style.display = 'none';
+        populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
+        newEntryOverlay.style.display = 'flex';
+    });
 });
