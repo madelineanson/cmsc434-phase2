@@ -33,6 +33,7 @@ body {
 
 .navbar a {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     flex: 1;
@@ -42,12 +43,13 @@ body {
     text-decoration: none;
     font-size: 17px;
     height: 100%;
+    padding: 0.5rem 0;
     box-sizing: border-box;
 }
 
 /* icons inside of links that are inside the navbar */
 .navbar a i {
-    font-size: 4rem;
+    font-size: 3.7rem;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -61,6 +63,14 @@ body {
 
 .navbar a:hover {
     color: #FFD5B6;
+}
+
+.nav-label {
+    display: block;
+    font-size: 1rem;
+    line-height: 1;
+    color: inherit;
+    pointer-events: none;
 }
 
 .rounded-rectangle {
@@ -199,6 +209,7 @@ body {
     margin-left: 5%;
     font-size: 2rem;
     font-weight: bold;
+    color: #303e58;
 }
 
 #new-plan-button {
@@ -225,6 +236,7 @@ body {
     cursor: pointer;
     font-size: 2.5rem;
     font-weight: bold;
+    box-shadow: 5px 5px 5px rgb(96, 95, 95);
 }
 
 #edit-plans-button {
@@ -626,4 +638,21 @@ body {
     .plan-category-row button.removeCategory {
         align-self: flex-end;
     }
+}
+
+#tab-header {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: bold;
+    margin-top: 1rem;
+    color: #303e58;
+}
+
+#incomeOptions {
+    background: transparent;
+}
+
+#recurrenceControls,
+#savingsControls {
+    margin-left: 0.25rem;
 }

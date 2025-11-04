@@ -1,50 +1,151 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Load entries from localStorage
     let entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
+    let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
 
     // existing detail popup
     const closePopupBtn = document.getElementById('closePopupBtn');
     const popupOverlay = document.getElementById('popupOverlay');
     const popupContent = document.getElementById('popupContent');
 
-    function openDetailPopup(entry) {
-        if (!popupOverlay || !popupContent) return;
-
-        const typeLabel = entry.type === 'credit' ? 'Credit' : 'Charge';
-        const amountClass = entry.type === 'credit' ? 'amount-plus' : 'amount-minus';
-        const amountSign = entry.type === 'credit' ? '+' : '-';
-
-        popupContent.innerHTML = `
-            <h2>Transaction Details</h2>
-            <div style="text-align: left; margin: 1rem 0;">
-                <p><strong>Date:</strong> ${entry.date}</p>
-                <p><strong>Type:</strong> ${typeLabel}</p>
-                <p class="${amountClass}"><strong>Amount:</strong> ${amountSign}$${entry.amount.toFixed(2)}</p>
-                <p><strong>Description:</strong> ${entry.description || 'N/A'}</p>
-                <p><strong>Category:</strong> ${entry.category || 'N/A'}</p>
-            </div>
-            <button id="closePopupBtn" class="closePopupBtn">Back</button>
-        `;
-        popupOverlay.style.display = 'flex';
-
-        // Re-attach close button listener
-        const newCloseBtn = document.getElementById('closePopupBtn');
-        if (newCloseBtn) newCloseBtn.addEventListener('click', closeOverlay);
-    }
-
+    // ensure these helpers exist before any popup markup tries to reference them
     function closeOverlay() {
         if (popupOverlay) popupOverlay.style.display = 'none';
     }
 
+    // clicking outside popupContent should close the overlay
     if (popupOverlay) {
-        popupOverlay.addEventListener('click', function (event) {
-            if (event.target === popupOverlay) closeOverlay();
+        popupOverlay.addEventListener('click', function (e) {
+            if (e.target === popupOverlay) closeOverlay();
         });
     }
 
-    document.addEventListener('keydown', (e) => {
+    // close overlay with Escape
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeOverlay();
     });
+
+    function openDetailPopup(entry) {
+        if (!popupOverlay || !popupContent) return;
+
+        // view mode: show bigger details + Edit/Delete buttons
+        popupContent.innerHTML = `
+            <h2>Transaction Details</h2>
+            <div style="text-align: left; margin: 1rem 0;">
+                <p><strong>Date:</strong> ${entry.date}</p>
+                <p><strong>Type:</strong> ${entry.type === 'credit' ? 'Income' : 'Charge'}</p>
+                <p class="${entry.type === 'credit' ? 'amount-plus' : 'amount-minus'}"><strong>Amount:</strong> ${entry.type === 'credit' ? '+' : '-'}$${entry.amount.toFixed(2)}</p>
+                <p><strong>Description:</strong> ${entry.description || 'N/A'}</p>
+                <p><strong>Category:</strong> ${entry.category || 'N/A'}</p>
+            </div>
+            <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:1rem;">
+                <button id="editTxnBtn" class="closePopupBtn">Edit</button>
+                <button id="deleteTxnBtn" class="closePopupBtn" style="background:#c33">Delete</button>
+                <button id="closePopupBtn" class="closePopupBtn">Back</button>
+            </div>
+        `;
+        popupOverlay.style.display = 'flex';
+
+        // wire up buttons
+        const editBtn = document.getElementById('editTxnBtn');
+        const delBtn = document.getElementById('deleteTxnBtn');
+        const backBtn = document.getElementById('closePopupBtn');
+
+        if (backBtn) backBtn.addEventListener('click', closeOverlay);
+        if (editBtn) editBtn.addEventListener('click', () => openEditPopup(entry));
+        if (delBtn) delBtn.addEventListener('click', () => {
+            entries = entries.filter(e => e.id !== entry.id);
+            localStorage.setItem('financeEntries', JSON.stringify(entries));
+            closeOverlay();
+            renderEntries();
+        });
+    }
+
+    function openEditPopup(entry) {
+        if (!popupOverlay || !popupContent) return;
+
+        // build edit form (reuse popup-form styles)
+        popupContent.innerHTML = `
+            <h2>Edit Transaction</h2>
+            <form id="editTxnForm" class="popup-form" style="text-align:left;">
+                <label for="editEntryDate">Date</label>
+                <input type="date" id="editEntryDate" name="editEntryDate" value="${entry.date}" required>
+
+                <fieldset class="entry-type">
+                    <legend>Type</legend>
+                    <label><input type="radio" name="editEntryType" value="debit" ${entry.type === 'debit' ? 'checked' : ''}> Charge</label>
+                    <label><input type="radio" name="editEntryType" value="credit" ${entry.type === 'credit' ? 'checked' : ''}> Income</label>
+                </fieldset>
+
+                <label for="editEntryAmount">Amount</label>
+                <input type="number" id="editEntryAmount" name="editEntryAmount" step="0.01" min="0" value="${entry.amount}" required>
+
+                <label for="editEntryDescription">Description</label>
+                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description||'').replace(/"/g,'&quot;')}">
+
+                <label for="editEntryCategory">Category</label>
+                <select id="editEntryCategory" name="editEntryCategory">
+                    <option value="">(None)</option>
+                    <option value="groceries">Groceries</option>
+                    <option value="fun">Fun</option>
+                    <option value="school">School</option>
+                    <option value="rent">Rent</option>
+                </select>
+
+                <div style="margin-top:1rem; display:flex; gap:0.5rem; align-items:center;">
+                    <button type="submit" id="saveEditedBtn" class="popup-form #saveEntryBtn">Save</button>
+                    <button type="button" id="cancelEditBtn" class="closePopupBtn">Cancel</button>
+                    <button type="button" id="deleteWhileEditingBtn" style="background:#c33; color:#fff; border:none; padding:0.5rem 0.9rem; border-radius:8px;">Delete</button>
+                </div>
+            </form>
+        `;
+
+        // set category select to entry value
+        const catSelect = document.getElementById('editEntryCategory');
+        if (catSelect) catSelect.value = entry.category || '';
+
+        // show overlay (already visible if coming from view)
+        popupOverlay.style.display = 'flex';
+
+        const editForm = document.getElementById('editTxnForm');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        const deleteBtn = document.getElementById('deleteWhileEditingBtn');
+
+        // save handler
+        editForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const updated = {
+                id: entry.id,
+                date: document.getElementById('editEntryDate').value,
+                type: document.querySelector('input[name="editEntryType"]:checked').value,
+                amount: parseFloat(document.getElementById('editEntryAmount').value || 0),
+                description: document.getElementById('editEntryDescription').value.trim(),
+                category: document.getElementById('editEntryCategory').value
+            };
+
+            // replace in entries array
+            entries = entries.map(en => en.id === entry.id ? updated : en);
+            localStorage.setItem('financeEntries', JSON.stringify(entries));
+            closeOverlay();
+            renderEntries();
+        });
+
+        // cancel -> go back to view mode for same entry
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => openDetailPopup(entry));
+        }
+
+        // delete while editing
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                if (!confirm('Delete this transaction?')) return;
+                entries = entries.filter(e => e.id !== entry.id);
+                localStorage.setItem('financeEntries', JSON.stringify(entries));
+                closeOverlay();
+                renderEntries();
+            });
+        }
+    }
 
     // Render entries to the page
     function renderEntries() {
@@ -66,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const button = document.createElement('button');
             button.className = 'rounded-rectangle openPopupBtn';
 
-            const typeLabel = entry.type === 'credit' ? 'Credit' : 'Charge';
+            const typeLabel = entry.type === 'credit' ? 'Income' : 'Charge';
             const amountClass = entry.type === 'credit' ? 'amount-plus' : 'amount-minus';
             const amountSign = entry.type === 'credit' ? '+' : '-';
 
@@ -93,68 +194,163 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ensure recurring plans generate missed entries up to today
+    function advanceDateByFrequency(dateStr, freq) {
+        const d = new Date(dateStr + 'T00:00:00');
+        switch (freq) {
+            case 'daily': d.setDate(d.getDate() + 1); break;
+            case 'weekly': d.setDate(d.getDate() + 7); break;
+            case 'biweekly': d.setDate(d.getDate() + 14); break;
+            case 'monthly': d.setMonth(d.getMonth() + 1); break;
+            default: d.setMonth(d.getMonth() + 1);
+        }
+        return d.toISOString().slice(0,10);
+    }
+
+    function processRecurringPlans() {
+        const today = new Date().toISOString().slice(0,10);
+        let changed = false;
+        recurringPlans.forEach(plan => {
+            // plan: { id, nextDate (YYYY-MM-DD), frequency, templateEntry }
+            while (plan.nextDate && plan.nextDate <= today) {
+                // create a new entry using templateEntry but with the plan.nextDate
+                const ent = Object.assign({}, plan.templateEntry);
+                ent.id = Date.now() + Math.floor(Math.random()*1000);
+                ent.date = plan.nextDate;
+                // mark generatedFromRecurring so UI can show it if needed
+                ent.recurringId = plan.id;
+                entries.push(ent);
+                // advance nextDate
+                plan.nextDate = advanceDateByFrequency(plan.nextDate, plan.frequency);
+                changed = true;
+            }
+        });
+        if (changed) {
+            localStorage.setItem('financeEntries', JSON.stringify(entries));
+            localStorage.setItem('recurringPlans', JSON.stringify(recurringPlans));
+        }
+    }
+
+    // run recurring processing on load before render
+    processRecurringPlans();
     // Initial render
     renderEntries();
 
-    // new-entry form popup
+    // new-entry form popup controls (wiring)
     const newEntryButton = document.getElementById('new-entry-button');
     const newEntryOverlay = document.getElementById('newEntryOverlay');
     const closeNewEntryBtn = document.getElementById('closeNewEntryBtn');
     const newEntryForm = document.getElementById('newEntryForm');
     const entryDate = document.getElementById('entryDate');
 
+    // income-specific controls
+    const incomeOptions = document.getElementById('incomeOptions');
+    const entryTypeRadios = document.getElementsByName('entryType');
+    const entryRecurringCheckbox = document.getElementById('entryRecurring');
+    const recurrenceControls = document.getElementById('recurrenceControls');
+    const recurrenceFrequency = document.getElementById('recurrenceFrequency');
+    const contributeSavings = document.getElementById('contributeSavings');
+    const savingsControls = document.getElementById('savingsControls');
+    const savingsGoalSelect = document.getElementById('savingsGoalSelect');
+    const savingsContributionType = document.getElementById('savingsContributionType');
+    const savingsContributionValue = document.getElementById('savingsContributionValue');
+
     if (entryDate) {
-        // default date to today (YYYY-MM-DD)
-        entryDate.value = new Date().toISOString().slice(0, 10);
+        entryDate.value = new Date().toISOString().slice(0,10);
     }
 
-    function openNewEntry() {
-        if (newEntryOverlay) newEntryOverlay.style.display = 'flex';
+    function showIncomeOptions(show) {
+        incomeOptions.style.display = show ? 'block' : 'none';
     }
+    // initial show/hide based on selected radio
+    Array.from(entryTypeRadios).forEach(r => {
+        r.addEventListener('change', () => {
+            showIncomeOptions(r.value === 'credit' && r.checked);
+        });
+        if (r.checked && r.value === 'credit') showIncomeOptions(true);
+    });
 
-    function closeNewEntry() {
-        if (newEntryOverlay) newEntryOverlay.style.display = 'none';
-    }
+    entryRecurringCheckbox?.addEventListener('change', (e) => {
+        recurrenceControls.style.display = e.target.checked ? 'block' : 'none';
+    });
 
+    contributeSavings?.addEventListener('change', (e) => {
+        savingsControls.style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // open/close overlay handlers (keep existing logic)
     if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
         e.preventDefault();
-        openNewEntry();
+        if (entryDate) entryDate.value = new Date().toISOString().slice(0,10);
+        // reset form fields
+        newEntryForm.reset();
+        showIncomeOptions(false);
+        recurrenceControls.style.display = 'none';
+        savingsControls.style.display = 'none';
+        newEntryOverlay.style.display = 'flex';
     });
-
-    if (closeNewEntryBtn) closeNewEntryBtn.addEventListener('click', closeNewEntry);
-
+    if (closeNewEntryBtn) closeNewEntryBtn.addEventListener('click', function () {
+        newEntryOverlay.style.display = 'none';
+    });
     if (newEntryOverlay) {
         newEntryOverlay.addEventListener('click', function (event) {
-            if (event.target === newEntryOverlay) closeNewEntry();
+            if (event.target === newEntryOverlay) newEntryOverlay.style.display = 'none';
         });
     }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') newEntryOverlay.style.display = 'none'; });
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && newEntryOverlay && newEntryOverlay.style.display === 'flex') closeNewEntry();
-    });
+    // Save new entry (and setup recurring plan if requested)
+    newEntryForm?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const data = {
+            id: Date.now(),
+            date: newEntryForm.entryDate.value,
+            type: newEntryForm.entryType.value,
+            amount: parseFloat(newEntryForm.entryAmount.value || 0),
+            description: newEntryForm.entryDescription.value.trim(),
+            category: newEntryForm.entryCategory.value,
+        };
 
-    if (newEntryForm) {
-        newEntryForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            const data = {
-                date: newEntryForm.entryDate.value,
-                type: newEntryForm.entryType.value,
-                amount: parseFloat(newEntryForm.entryAmount.value || 0),
-                description: newEntryForm.entryDescription.value.trim(),
-                category: newEntryForm.entryCategory.value,
-                id: Date.now() // unique ID for each entry
+        // savings contribution capture
+        if (contributeSavings && contributeSavings.checked) {
+            data.contribution = {
+                enabled: true,
+                goalId: savingsGoalSelect?.value || null,
+                type: savingsContributionType?.value || 'all',
+                value: parseFloat(savingsContributionValue?.value || 0)
             };
+        } else {
+            data.contribution = { enabled: false };
+        }
 
-            entries.push(data);
-            localStorage.setItem('financeEntries', JSON.stringify(entries));
-            renderEntries();
+        entries.push(data);
+        localStorage.setItem('financeEntries', JSON.stringify(entries));
 
-            newEntryForm.reset();
-            entryDate.value = new Date().toISOString().slice(0, 10);
-            closeNewEntry();
-        });
-    }
+        // If income + recurring, create a recurringPlan entry
+        if (data.type === 'credit' && entryRecurringCheckbox && entryRecurringCheckbox.checked) {
+            const freq = recurrenceFrequency.value || 'monthly';
+            const nextDate = advanceDateByFrequency(data.date, freq); // next occurrence after saved date
+            const plan = {
+                id: Date.now() + Math.floor(Math.random()*1000),
+                frequency: freq,
+                nextDate: nextDate,
+                templateEntry: {
+                    // template for generated entries (type, amount, description, category, contribution)
+                    type: data.type,
+                    amount: data.amount,
+                    description: data.description,
+                    category: data.category,
+                    contribution: data.contribution
+                }
+            };
+            recurringPlans.push(plan);
+            localStorage.setItem('recurringPlans', JSON.stringify(recurringPlans));
+        }
+
+        // close and refresh UI
+        newEntryOverlay.style.display = 'none';
+        renderEntries();
+    });
 
     if (document.getElementById('piechart')) {
         google.charts.load('current', { packages: ['corechart'] });

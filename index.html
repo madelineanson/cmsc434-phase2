@@ -35,8 +35,8 @@
 
                             <fieldset class="entry-type">
                                 <legend>Type</legend>
-                                <label><input type="radio" name="entryType" value="debit" checked> Debit</label>
-                                <label><input type="radio" name="entryType" value="credit"> Credit</label>
+                                <label><input type="radio" name="entryType" value="debit" checked> Charge</label>
+                                <label><input type="radio" name="entryType" value="credit"> Income</label>
                             </fieldset>
 
                             <label for="entryAmount">Amount</label>
@@ -53,6 +53,38 @@
                                 <option value="rent">Rent</option>
                             </select>
 
+                            <!-- Income-only options (hidden for Charge) -->
+                            <div id="incomeOptions" style="display:none; margin-top:0.75rem;">
+                                <label><input type="checkbox" id="entryRecurring"> Recurring</label>
+
+                                <div id="recurrenceControls" style="display:none; margin-top:0.5rem;">
+                                    <label for="recurrenceFrequency">Frequency</label>
+                                    <select id="recurrenceFrequency">
+                                        <option value="weekly">Weekly</option>
+                                        <option value="biweekly">Biweekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="daily">Daily</option>
+                                    </select>
+                                    <small style="display:block; color:#555;">New entries will be auto-created on load for due recurring items.</small>
+                                </div>
+
+                                <div style="margin-top:0.5rem;">
+                                    <label><input type="checkbox" id="contributeSavings"> Contribute to Savings Goal</label>
+                                    <div id="savingsControls" style="display:none; margin-top:0.5rem;">
+                                        <label for="savingsGoalSelect">Savings Goal</label>
+                                        <select id="savingsGoalSelect">
+                                            <option value="">(No goals yet)</option>
+                                        </select>
+                                        <label for="savingsContributionType">Contribution</label>
+                                        <select id="savingsContributionType">
+                                            <option value="all">All</option>
+                                            <option value="portion">Portion</option>
+                                        </select>
+                                        <input id="savingsContributionValue" type="number" min="0" step="0.01" placeholder="Amount or % (if portion)">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div style="margin-top:1rem;">
                                 <button type="submit" id="saveEntryBtn">Save</button>
                                 <button type="button" id="closeNewEntryBtn" class="closePopupBtn">Cancel</button>
@@ -60,6 +92,8 @@
                         </form>
                     </div>
                 </div>
+
+                <h1 id="tab-header">Financial Entries</h1>
 
                 <button id="new-entry-button">+ Entry</button>
                 <h1 id="recent-activity-header">Recent Activity:</h1>
@@ -103,10 +137,10 @@
                 </div>
             </div>
             <div class="navbar">
-                <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i></a>
-                <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i></a>
-                <a href="index.html" class="nav-icon active"><i class="fa-solid fa-dollar-sign"></i></a>
-                <a href="profile.html" class="nav-icon"><i class="fa-solid fa-user"></i></a>
+                <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i><span class="nav-label">Budgets</span></a>
+                <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i><span class="nav-label">Stats</span></a>
+                <a href="index.html" class="nav-icon active"><i class="fa-solid fa-receipt"></i><span class="nav-label">Entries</span></a>
+                <a href="profile.html" class="nav-icon"><i class="fa-solid fa-coins"></i><span class="nav-label">Savings</span></a>
             </div>
         </div>
     </div>
