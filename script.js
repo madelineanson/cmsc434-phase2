@@ -416,13 +416,23 @@ document.addEventListener('DOMContentLoaded', function () {
         google.charts.setOnLoadCallback(drawPie);
 
         function drawPie() {
-            const data = google.visualization.arrayToDataTable([
+            const currDay = new Date();
+            const currYearMonth = currDay.toISOString().slice(0,7);
+            const currPlan = budgetPlans.find(b => b.month === currYearMonth)
+            data = google.visualization.arrayToDataTable([
                 ['Category', 'Amount'],
                 ['Groceries', 300],
                 ['Fun', 120],
                 ['School', 220],
                 ['Rent', 800]
             ]);
+
+            // if there is a budget plan for the current month, use those categories. if not, keep default
+            if (currPlan) {
+                data = google.visualization.arrayToDataTable([
+                    currPlan.categories
+                ]);
+            } 
 
             const options = {
                 backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
@@ -556,7 +566,9 @@ document.addEventListener('DOMContentLoaded', function () {
         updateChart();
     }
 
-    // budget-plans popup
+    /*
+        BUDGET PLANS POP UP 
+    */
 
     const newPlanButton = document.getElementById('new-plan-button');
     const newPlanOverlay = document.getElementById('newPlanOverlay');
