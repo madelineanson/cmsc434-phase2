@@ -656,3 +656,75 @@ body {
 #savingsControls {
     margin-left: 0.25rem;
 }
+
+/* virtual keyboard */
+#virtualKeyboard {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #3f5474, #4B628B);
+    padding: 0.5rem;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-family: inherit;
+}
+
+/* rows */
+#virtualKeyboard .vk-row {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    width: 100%;
+    max-width: 920px;
+    box-sizing: border-box;
+}
+
+/* keys */
+.vk-key {
+    user-select: none;
+    -webkit-user-select: none;
+    background: #F4FBFF;
+    color: #2b2b2b;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    min-width: 2rem;
+    text-align: center;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+/* wide keys */
+.vk-key-wide {
+    min-width: 8rem;
+    flex: 1;
+}
+
+.vk-key-action {
+    background: #DD8A4E;
+    color: #fff;
+}
+
+.vk-key-done {
+    background: #3A6A9A;
+    color: #fff;
+}
+
+#virtualKeyboard.vk-numeric .vk-row-letters {
+    display: none;
+}
+
+.navbar {
+    z-index: 1000;
+}
+
+/* existing */
+#virtualKeyboard {
+    z-index: 2000;
+}

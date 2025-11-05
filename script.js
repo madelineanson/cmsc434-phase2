@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function getCurrentMonthKey() {
         // returns YYYY-MM for current month
         const d = new Date();
-        return d.toISOString().slice(0,7);
+        return d.toISOString().slice(0, 7);
     }
 
     function normalizeStoredPlans() {
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="number" id="editEntryAmount" name="editEntryAmount" step="0.01" min="0" value="${entry.amount}" required>
 
                 <label for="editEntryDescription">Description</label>
-                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description||'').replace(/"/g,'&quot;')}">
+                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description || '').replace(/"/g, '&quot;')}">
 
                 <label for="editEntryCategory">Category</label>
                 <select id="editEntryCategory" name="editEntryCategory">
@@ -198,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // delete while editing
         if (deleteBtn) {
             deleteBtn.addEventListener('click', () => {
-                if (!confirm('Delete this transaction?')) return;
                 entries = entries.filter(e => e.id !== entry.id);
                 localStorage.setItem('financeEntries', JSON.stringify(entries));
                 closeOverlay();
@@ -264,18 +263,18 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'monthly': d.setMonth(d.getMonth() + 1); break;
             default: d.setMonth(d.getMonth() + 1);
         }
-        return d.toISOString().slice(0,10);
+        return d.toISOString().slice(0, 10);
     }
 
     function processRecurringPlans() {
-        const today = new Date().toISOString().slice(0,10);
+        const today = new Date().toISOString().slice(0, 10);
         let changed = false;
         recurringPlans.forEach(plan => {
             // plan: { id, nextDate (YYYY-MM-DD), frequency, templateEntry }
             while (plan.nextDate && plan.nextDate <= today) {
                 // create a new entry using templateEntry but with the plan.nextDate
                 const ent = Object.assign({}, plan.templateEntry);
-                ent.id = Date.now() + Math.floor(Math.random()*1000);
+                ent.id = Date.now() + Math.floor(Math.random() * 1000);
                 ent.date = plan.nextDate;
                 // mark generatedFromRecurring so UI can show it if needed
                 ent.recurringId = plan.id;
@@ -316,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const savingsContributionValue = document.getElementById('savingsContributionValue');
 
     if (entryDate) {
-        entryDate.value = new Date().toISOString().slice(0,10);
+        entryDate.value = new Date().toISOString().slice(0, 10);
     }
 
     function showIncomeOptions(show) {
@@ -341,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // open/close overlay handlers (keep existing logic)
     if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
         e.preventDefault();
-        if (entryDate) entryDate.value = new Date().toISOString().slice(0,10);
+        if (entryDate) entryDate.value = new Date().toISOString().slice(0, 10);
         newEntryForm.reset();
         showIncomeOptions(false);
         recurrenceControls.style.display = 'none';
@@ -391,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const freq = recurrenceFrequency.value || 'monthly';
             const nextDate = advanceDateByFrequency(data.date, freq); // next occurrence after saved date
             const plan = {
-                id: Date.now() + Math.floor(Math.random()*1000),
+                id: Date.now() + Math.floor(Math.random() * 1000),
                 frequency: freq,
                 nextDate: nextDate,
                 templateEntry: {
@@ -586,13 +585,13 @@ document.addEventListener('DOMContentLoaded', function () {
         for (let i = 0; i < 12; i++) {
             const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
             const opt = document.createElement('option');
-            opt.value = d.toISOString().slice(0,7);
+            opt.value = d.toISOString().slice(0, 7);
             opt.textContent = formatMonthLabel(d);
             planMonth.appendChild(opt);
         }
     }
 
-    function createCategoryRow(cat = { name:'', amount:0 }) {
+    function createCategoryRow(cat = { name: '', amount: 0 }) {
         const row = document.createElement('div');
         row.className = 'plan-category-row';
 
@@ -639,8 +638,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (![...planMonth.options].some(o => o.value === optVal)) {
                 const tempOpt = document.createElement('option');
                 tempOpt.value = optVal;
-                const [y,m] = optVal.split('-');
-                tempOpt.textContent = new Date(y, m-1, 1).toLocaleString(undefined, { month:'long', year:'numeric' });
+                const [y, m] = optVal.split('-');
+                tempOpt.textContent = new Date(y, m - 1, 1).toLocaleString(undefined, { month: 'long', year: 'numeric' });
                 planMonth.appendChild(tempOpt);
             }
             planMonth.value = optVal;
@@ -673,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
             a.dataset.id = plan.id;
             const label = document.createElement('span');
             label.className = 'plan-month';
-            label.textContent = new Date(plan.month + '-01').toLocaleString(undefined, { month:'long', year:'numeric' });
+            label.textContent = new Date(plan.month + '-01').toLocaleString(undefined, { month: 'long', year: 'numeric' });
             const icon = document.createElement('i');
             icon.className = 'fa-solid fa-pen-to-square';
             a.appendChild(label);
@@ -713,7 +712,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // delete plan
     deletePlanBtn?.addEventListener('click', () => {
         if (!editingPlanId) return;
-        if (!confirm('Delete this plan?')) return;
         budgetPlans = budgetPlans.filter(p => p.id !== editingPlanId);
         localStorage.setItem('budgetPlans', JSON.stringify(budgetPlans));
         renderPlans();
@@ -777,7 +775,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // open new-entry overlay (update to populate categories each time)
     if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
         e.preventDefault();
-        if (entryDate) entryDate.value = new Date().toISOString().slice(0,10);
+        if (entryDate) entryDate.value = new Date().toISOString().slice(0, 10);
         newEntryForm.reset();
         showIncomeOptions(false);
         recurrenceControls.style.display = 'none';
@@ -785,4 +783,193 @@ document.addEventListener('DOMContentLoaded', function () {
         populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
         newEntryOverlay.style.display = 'flex';
     });
+
+    // virtual keyboard :)
+    (function () {
+        const VK_ID = 'virtualKeyboard';
+        const VK_KEY_CLASS = 'vk-key';
+
+        function createKeyboard() {
+            if (document.getElementById(VK_ID)) return;
+            const vk = document.createElement('div');
+            vk.id = VK_ID;
+            vk.innerHTML = `
+      <div class="vk-inner">
+        <div class="vk-letters">
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-key="q">q</div>
+            <div class="${VK_KEY_CLASS}" data-key="w">w</div>
+            <div class="${VK_KEY_CLASS}" data-key="e">e</div>
+            <div class="${VK_KEY_CLASS}" data-key="r">r</div>
+            <div class="${VK_KEY_CLASS}" data-key="t">t</div>
+            <div class="${VK_KEY_CLASS}" data-key="y">y</div>
+            <div class="${VK_KEY_CLASS}" data-key="u">u</div>
+            <div class="${VK_KEY_CLASS}" data-key="i">i</div>
+            <div class="${VK_KEY_CLASS}" data-key="o">o</div>
+            <div class="${VK_KEY_CLASS}" data-key="p">p</div>
+          </div>
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-key="a">a</div>
+            <div class="${VK_KEY_CLASS}" data-key="s">s</div>
+            <div class="${VK_KEY_CLASS}" data-key="d">d</div>
+            <div class="${VK_KEY_CLASS}" data-key="f">f</div>
+            <div class="${VK_KEY_CLASS}" data-key="g">g</div>
+            <div class="${VK_KEY_CLASS}" data-key="h">h</div>
+            <div class="${VK_KEY_CLASS}" data-key="j">j</div>
+            <div class="${VK_KEY_CLASS}" data-key="k">k</div>
+            <div class="${VK_KEY_CLASS}" data-key="l">l</div>
+          </div>
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-fn="left">◀</div>
+            <div class="${VK_KEY_CLASS}" data-key="z">z</div>
+            <div class="${VK_KEY_CLASS}" data-key="x">x</div>
+            <div class="${VK_KEY_CLASS}" data-key="c">c</div>
+            <div class="${VK_KEY_CLASS}" data-key="v">v</div>
+            <div class="${VK_KEY_CLASS}" data-key="b">b</div>
+            <div class="${VK_KEY_CLASS}" data-key="n">n</div>
+            <div class="${VK_KEY_CLASS}" data-key="m">m</div>
+            <div class="${VK_KEY_CLASS}" data-fn="right">▶</div>
+          </div>
+          <div class="vk-row vk-row-bottom">
+            <div class="${VK_KEY_CLASS} vk-key-wide" data-fn="space">Space</div>
+            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
+            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
+            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
+            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
+          </div>
+        </div>
+
+        <div class="vk-numeric" style="display:none;">
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-key="7">7</div>
+            <div class="${VK_KEY_CLASS}" data-key="8">8</div>
+            <div class="${VK_KEY_CLASS}" data-key="9">9</div>
+          </div>
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-key="4">4</div>
+            <div class="${VK_KEY_CLASS}" data-key="5">5</div>
+            <div class="${VK_KEY_CLASS}" data-key="6">6</div>
+          </div>
+          <div class="vk-row">
+            <div class="${VK_KEY_CLASS}" data-key="1">1</div>
+            <div class="${VK_KEY_CLASS}" data-key="2">2</div>
+            <div class="${VK_KEY_CLASS}" data-key="3">3</div>
+          </div>
+          <div class="vk-row vk-row-bottom">
+            <div class="${VK_KEY_CLASS} vk-key-wide" data-key="0">0</div>
+            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
+            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
+            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
+            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
+          </div>
+        </div>
+      </div>
+    `;
+            vk.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2000;display:flex;justify-content:center;padding:.4rem;background:linear-gradient(180deg,#3f5474,#4B628B);box-shadow:0 -6px 18px rgba(0,0,0,.35);';
+            document.body.appendChild(vk);
+
+            vk.addEventListener('click', (e) => {
+                const btn = e.target.closest('.' + VK_KEY_CLASS);
+                if (!btn || !VirtualKeyboard.activeInput) return;
+                const fn = btn.dataset.fn;
+                const key = btn.dataset.key;
+                VirtualKeyboard.handleKey(fn, key);
+            });
+        }
+
+        const VirtualKeyboard = {
+            activeInput: null,
+            caretPos: 0,
+            mode: 'text',
+            showFor(input) {
+                if (!input) return;
+                createKeyboard();
+                this.activeInput = input;
+                // mark readonly to prevent native mobile keyboard; keep ability to paste programmatically
+                try { input.readOnly = true; } catch (e) { }
+                this.caretPos = input.value ? input.value.length : 0;
+                // determine numeric mode
+                this.mode = (input.type === 'number' || input.inputMode === 'numeric' || input.type === 'date') ? 'numeric' : 'text';
+                const vk = document.getElementById(VK_ID);
+                if (!vk) return;
+                vk.querySelector('.vk-letters').style.display = this.mode === 'text' ? 'block' : 'none';
+                vk.querySelector('.vk-numeric').style.display = this.mode === 'numeric' ? 'block' : 'none';
+                vk.style.display = 'flex';
+            },
+            hide() {
+                if (this.activeInput) {
+                    try { this.activeInput.readOnly = false; } catch (e) { }
+                }
+                this.activeInput = null;
+                const vk = document.getElementById(VK_ID);
+                if (vk) vk.style.display = 'none';
+            },
+            insertChar(ch) {
+                const input = this.activeInput;
+                if (!input) return;
+                const v = input.value || '';
+                const before = v.slice(0, this.caretPos);
+                const after = v.slice(this.caretPos);
+                input.value = before + ch + after;
+                this.caretPos += ch.length;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            },
+            backspace() {
+                const input = this.activeInput;
+                if (!input || this.caretPos === 0) return;
+                const v = input.value || '';
+                input.value = v.slice(0, this.caretPos - 1) + v.slice(this.caretPos);
+                this.caretPos = Math.max(0, this.caretPos - 1);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            },
+            moveLeft() { this.caretPos = Math.max(0, this.caretPos - 1); },
+            moveRight() {
+                const input = this.activeInput;
+                if (!input) return;
+                this.caretPos = Math.min((input.value || '').length, this.caretPos + 1);
+            },
+            handleKey(fn, key) {
+                if (!this.activeInput) return;
+                if (fn === 'space') this.insertChar(' ');
+                else if (fn === 'back') this.backspace();
+                else if (fn === 'left') this.moveLeft();
+                else if (fn === 'right') this.moveRight();
+                else if (fn === 'enter') {
+                    const form = this.activeInput.form;
+                    if (form) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                } else if (fn === 'done') this.hide();
+                else if (fn === 'dot') this.insertChar('.');
+                else if (key) this.insertChar(key);
+            }
+        };
+
+        // show keyboard for ANY input/textarea focus
+        document.addEventListener('focusin', (e) => {
+            const el = e.target;
+            if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+            // ignore inputs explicitly opting out
+            if (el.dataset.noVk === 'true') return;
+            VirtualKeyboard.showFor(el);
+        });
+
+        // hide when clicking outside inputs and keyboard
+        document.addEventListener('click', (e) => {
+            const vk = document.getElementById(VK_ID);
+            if (!vk || vk.style.display === 'none') return;
+            const clickedVK = vk.contains(e.target);
+            const clickedInput = e.target.closest('input,textarea');
+            if (!clickedVK && !clickedInput) VirtualKeyboard.hide();
+        });
+
+        // ensure keyboard hides when inputs blur via code (or overlays close)
+        const obs = new MutationObserver(() => {
+            const vk = document.getElementById(VK_ID);
+            if (!vk) return;
+            // hide if no focused input
+            const active = document.activeElement;
+            if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) VirtualKeyboard.hide();
+        });
+        obs.observe(document.body, { subtree: true, childList: true, attributes: true });
+    })();
+
 });
