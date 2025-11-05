@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
     let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
 
-    // the default categories i made are used when there's no plan for current month
+    // the default categories made are used when there's no plan for current month
     const defaultCategories = [
         'Fun', 'Groceries', 'Rent', 'Utilities',
         'Insurance', 'Education', 'Transportation', 'Health'
