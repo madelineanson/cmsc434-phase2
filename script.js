@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function drawPie() {
             const currDay = new Date();
-            const currYearMonth = currDay.toISOString().slice(0,7);
+            const currYearMonth = getCurrMonthYr(currDay);
             const currPlan = budgetPlans.find(b => b.month === currYearMonth)
             data = google.visualization.arrayToDataTable([
                 ['Category', 'Amount'],
@@ -429,9 +429,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // if there is a budget plan for the current month, use those categories. if not, keep default
             if (currPlan) {
-                data = google.visualization.arrayToDataTable([
-                    currPlan.categories
-                ]);
+                entryRows = [['Category', 'Amount']]
+                currPlan.categories.forEach(elem => {
+                    entryRows.push([elem.name, Number(elem.amount)])
+                })
+                data = google.visualization.arrayToDataTable(entryRows);
             } 
 
             const options = {
@@ -591,13 +593,19 @@ document.addEventListener('DOMContentLoaded', function () {
         return date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
     }
 
+    function getCurrMonthYr(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; 
+        return `${year}-${month.toString().padStart(2,'0')}`; 
+    }
+
     function populateMonthOptions() {
         planMonth.innerHTML = '';
         const today = new Date();
         for (let i = 0; i < 12; i++) {
             const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
             const opt = document.createElement('option');
-            opt.value = d.toISOString().slice(0, 7);
+            opt.value = getCurrMonthYr(d)
             opt.textContent = formatMonthLabel(d);
             planMonth.appendChild(opt);
         }
