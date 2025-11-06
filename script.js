@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
     let savingsGoals = JSON.parse(localStorage.getItem('savingsGoals')) || [];
 
-    // the default categories i made are used when there's no plan for current month
+    // the default categories made are used when there's no plan for current month
     const defaultCategories = [
         'Fun', 'Groceries', 'Rent', 'Utilities',
         'Insurance', 'Education', 'Transportation', 'Health'
@@ -500,13 +500,25 @@ document.addEventListener('DOMContentLoaded', function () {
         google.charts.setOnLoadCallback(drawPie);
 
         function drawPie() {
-            const data = google.visualization.arrayToDataTable([
+            const currDay = new Date();
+            const currYearMonth = getCurrMonthYr(currDay);
+            const currPlan = budgetPlans.find(b => b.month === currYearMonth)
+            data = google.visualization.arrayToDataTable([
                 ['Category', 'Amount'],
                 ['Groceries', 300],
                 ['Fun', 120],
                 ['School', 220],
                 ['Rent', 800]
             ]);
+
+            // if there is a budget plan for the current month, use those categories. if not, keep default
+            if (currPlan) {
+                entryRows = [['Category', 'Amount']]
+                currPlan.categories.forEach(elem => {
+                    entryRows.push([elem.name, Number(elem.amount)])
+                })
+                data = google.visualization.arrayToDataTable(entryRows);
+            } 
 
             const options = {
                 backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
@@ -640,7 +652,9 @@ document.addEventListener('DOMContentLoaded', function () {
         updateChart();
     }
 
-    // budget-plans popup
+    /*
+        BUDGET PLANS POP UP 
+    */
 
     const newPlanButton = document.getElementById('new-plan-button');
     const newPlanOverlay = document.getElementById('newPlanOverlay');
@@ -663,13 +677,19 @@ document.addEventListener('DOMContentLoaded', function () {
         return date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
     }
 
+    function getCurrMonthYr(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1; 
+        return `${year}-${month.toString().padStart(2,'0')}`; 
+    }
+
     function populateMonthOptions() {
         planMonth.innerHTML = '';
         const today = new Date();
         for (let i = 0; i < 12; i++) {
             const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
             const opt = document.createElement('option');
-            opt.value = d.toISOString().slice(0, 7);
+            opt.value = getCurrMonthYr(d)
             opt.textContent = formatMonthLabel(d);
             planMonth.appendChild(opt);
         }
