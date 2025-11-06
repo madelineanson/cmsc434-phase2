@@ -932,192 +932,66 @@ document.addEventListener('DOMContentLoaded', function () {
     renderSavingsGoals();
     populateSavingsGoalSelect();
 
-    // virtual keyboard :)
+    // image keyboard placeholders (alpha / numeric)
     (function () {
-        const VK_ID = 'virtualKeyboard';
-        const VK_KEY_CLASS = 'vk-key';
+        const container = document.getElementById('imageKeyboard');
+        const img = document.getElementById('keyboardImage');
+        if (!container || !img) return;
 
-        function createKeyboard() {
-            if (document.getElementById(VK_ID)) return;
-            const vk = document.createElement('div');
-            vk.id = VK_ID;
-            vk.innerHTML = `
-      <div class="vk-inner">
-        <div class="vk-letters">
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="q">q</div>
-            <div class="${VK_KEY_CLASS}" data-key="w">w</div>
-            <div class="${VK_KEY_CLASS}" data-key="e">e</div>
-            <div class="${VK_KEY_CLASS}" data-key="r">r</div>
-            <div class="${VK_KEY_CLASS}" data-key="t">t</div>
-            <div class="${VK_KEY_CLASS}" data-key="y">y</div>
-            <div class="${VK_KEY_CLASS}" data-key="u">u</div>
-            <div class="${VK_KEY_CLASS}" data-key="i">i</div>
-            <div class="${VK_KEY_CLASS}" data-key="o">o</div>
-            <div class="${VK_KEY_CLASS}" data-key="p">p</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="a">a</div>
-            <div class="${VK_KEY_CLASS}" data-key="s">s</div>
-            <div class="${VK_KEY_CLASS}" data-key="d">d</div>
-            <div class="${VK_KEY_CLASS}" data-key="f">f</div>
-            <div class="${VK_KEY_CLASS}" data-key="g">g</div>
-            <div class="${VK_KEY_CLASS}" data-key="h">h</div>
-            <div class="${VK_KEY_CLASS}" data-key="j">j</div>
-            <div class="${VK_KEY_CLASS}" data-key="k">k</div>
-            <div class="${VK_KEY_CLASS}" data-key="l">l</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-fn="left">◀</div>
-            <div class="${VK_KEY_CLASS}" data-key="z">z</div>
-            <div class="${VK_KEY_CLASS}" data-key="x">x</div>
-            <div class="${VK_KEY_CLASS}" data-key="c">c</div>
-            <div class="${VK_KEY_CLASS}" data-key="v">v</div>
-            <div class="${VK_KEY_CLASS}" data-key="b">b</div>
-            <div class="${VK_KEY_CLASS}" data-key="n">n</div>
-            <div class="${VK_KEY_CLASS}" data-key="m">m</div>
-            <div class="${VK_KEY_CLASS}" data-fn="right">▶</div>
-          </div>
-          <div class="vk-row vk-row-bottom">
-            <div class="${VK_KEY_CLASS} vk-key-wide" data-fn="space">Space</div>
-            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
-            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
-            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
-            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
-          </div>
-        </div>
+        const alphaPath = 'assets\\alpha-keyboard.jpg';
+        const numericPath = 'assets\\numeric-keyboard.jpg';
 
-        <div class="vk-numeric" style="display:none;">
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="7">7</div>
-            <div class="${VK_KEY_CLASS}" data-key="8">8</div>
-            <div class="${VK_KEY_CLASS}" data-key="9">9</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="4">4</div>
-            <div class="${VK_KEY_CLASS}" data-key="5">5</div>
-            <div class="${VK_KEY_CLASS}" data-key="6">6</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="1">1</div>
-            <div class="${VK_KEY_CLASS}" data-key="2">2</div>
-            <div class="${VK_KEY_CLASS}" data-key="3">3</div>
-          </div>
-          <div class="vk-row vk-row-bottom">
-            <div class="${VK_KEY_CLASS} vk-key-wide" data-key="0">0</div>
-            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
-            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
-            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
-            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
-          </div>
-        </div>
-      </div>
-    `;
-            vk.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2000;display:flex;justify-content:center;padding:.4rem;background:linear-gradient(180deg,#3f5474,#4B628B);box-shadow:0 -6px 18px rgba(0,0,0,.35);';
-            document.body.appendChild(vk);
-
-            vk.addEventListener('click', (e) => {
-                const btn = e.target.closest('.' + VK_KEY_CLASS);
-                if (!btn || !VirtualKeyboard.activeInput) return;
-                const fn = btn.dataset.fn;
-                const key = btn.dataset.key;
-                VirtualKeyboard.handleKey(fn, key);
-            });
+        function showKeyboardFor(el) {
+            // choose numeric if input type/role indicates numeric
+            const isNumeric = el.type === 'number' || el.inputMode === 'numeric' || el.type === 'date' || el.dataset.numeric === 'true';
+            img.src = isNumeric ? numericPath : alphaPath;
+            container.style.display = 'flex';
+        }
+        function hideKeyboard() {
+            img.src = '';
+            container.style.display = 'none';
         }
 
-        const VirtualKeyboard = {
-            activeInput: null,
-            caretPos: 0,
-            mode: 'text',
-            showFor(input) {
-                if (!input) return;
-                createKeyboard();
-                this.activeInput = input;
-                // mark readonly to prevent native mobile keyboard; keep ability to paste programmatically
-                try { input.readOnly = true; } catch (e) { }
-                this.caretPos = input.value ? input.value.length : 0;
-                // determine numeric mode
-                this.mode = (input.type === 'number' || input.inputMode === 'numeric' || input.type === 'date') ? 'numeric' : 'text';
-                const vk = document.getElementById(VK_ID);
-                if (!vk) return;
-                vk.querySelector('.vk-letters').style.display = this.mode === 'text' ? 'block' : 'none';
-                vk.querySelector('.vk-numeric').style.display = this.mode === 'numeric' ? 'block' : 'none';
-                vk.style.display = 'flex';
-            },
-            hide() {
-                if (this.activeInput) {
-                    try { this.activeInput.readOnly = false; } catch (e) { }
-                }
-                this.activeInput = null;
-                const vk = document.getElementById(VK_ID);
-                if (vk) vk.style.display = 'none';
-            },
-            insertChar(ch) {
-                const input = this.activeInput;
-                if (!input) return;
-                const v = input.value || '';
-                const before = v.slice(0, this.caretPos);
-                const after = v.slice(this.caretPos);
-                input.value = before + ch + after;
-                this.caretPos += ch.length;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-            backspace() {
-                const input = this.activeInput;
-                if (!input || this.caretPos === 0) return;
-                const v = input.value || '';
-                input.value = v.slice(0, this.caretPos - 1) + v.slice(this.caretPos);
-                this.caretPos = Math.max(0, this.caretPos - 1);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-            moveLeft() { this.caretPos = Math.max(0, this.caretPos - 1); },
-            moveRight() {
-                const input = this.activeInput;
-                if (!input) return;
-                this.caretPos = Math.min((input.value || '').length, this.caretPos + 1);
-            },
-            handleKey(fn, key) {
-                if (!this.activeInput) return;
-                if (fn === 'space') this.insertChar(' ');
-                else if (fn === 'back') this.backspace();
-                else if (fn === 'left') this.moveLeft();
-                else if (fn === 'right') this.moveRight();
-                else if (fn === 'enter') {
-                    const form = this.activeInput.form;
-                    if (form) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                } else if (fn === 'done') this.hide();
-                else if (fn === 'dot') this.insertChar('.');
-                else if (key) this.insertChar(key);
-            }
-        };
-
-        // show keyboard for ANY input/textarea focus
+        // show when any input/textarea focused
         document.addEventListener('focusin', (e) => {
             const el = e.target;
             if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
-            // ignore inputs explicitly opting out
-            if (el.dataset.noVk === 'true') return;
-            VirtualKeyboard.showFor(el);
+            if (el.dataset.noKeyboard === 'true') return;
+            showKeyboardFor(el);
         });
 
-        // hide when clicking outside inputs and keyboard
+        // hide when focus moves away (debounced to allow focusing another input)
+        document.addEventListener('focusout', (e) => {
+            setTimeout(() => {
+                const active = document.activeElement;
+                if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                    hideKeyboard();
+                }
+            }, 10);
+        });
+
+        // also hide when clicking outside inputs (safety)
         document.addEventListener('click', (e) => {
-            const vk = document.getElementById(VK_ID);
-            if (!vk || vk.style.display === 'none') return;
-            const clickedVK = vk.contains(e.target);
             const clickedInput = e.target.closest('input,textarea');
-            if (!clickedVK && !clickedInput) VirtualKeyboard.hide();
+            const clickedKeyboard = e.target.closest('#imageKeyboard');
+            if (!clickedInput && !clickedKeyboard) hideKeyboard();
         });
 
-        // ensure keyboard hides when inputs blur via code (or overlays close)
-        const obs = new MutationObserver(() => {
-            const vk = document.getElementById(VK_ID);
-            if (!vk) return;
-            // hide if no focused input
-            const active = document.activeElement;
-            if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) VirtualKeyboard.hide();
+        // hide when overlays close: observe overlay display changes (optional)
+        const overlays = ['popupOverlay', 'newEntryOverlay', 'newPlanOverlay', 'newGoalOverlay'];
+        overlays.forEach(id => {
+            const ov = document.getElementById(id);
+            if (!ov) return;
+            const obs = new MutationObserver(() => {
+                const style = getComputedStyle(ov);
+                if (style.display === 'none') {
+                    // if no input focused, hide the keyboard
+                    const active = document.activeElement;
+                    if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) hideKeyboard();
+                }
+            });
+            obs.observe(ov, { attributes: true, attributeFilter: ['style'] });
         });
-        obs.observe(document.body, { subtree: true, childList: true, attributes: true });
+
     })();
-
 });
