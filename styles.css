@@ -8,11 +8,12 @@ body {
 }
 
 #app-logo {
-    width: 80%;
+    width: 50%;
     height: auto;
     display: block;
     margin: 0 auto;
-    margin-top: 2rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .navbar {
@@ -80,11 +81,11 @@ body {
     gap: 1rem;
     padding: 1rem;
     width: 90%;
-    height: 7.5rem;
+    height: 6rem;
     background-color: #ABB9D1;
     border-radius: 20px;
     box-shadow: 10px 10px 5px rgb(96, 95, 95);
-    margin: 2rem auto 0;
+    margin: 1rem auto 0;
     border: 0;
     box-sizing: border-box;
 }
@@ -207,9 +208,11 @@ body {
 
 #recent-activity-header {
     margin-left: 5%;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #303e58;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 #new-plan-button {
@@ -642,9 +645,10 @@ body {
 
 #tab-header {
     text-align: center;
-    font-size: 3rem;
+    font-size: 1.8rem;
     font-weight: bold;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
     color: #303e58;
 }
 
