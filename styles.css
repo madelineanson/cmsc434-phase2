@@ -158,14 +158,21 @@ body {
     padding: 0;
     margin-right: 1rem;
 }
-
+/* 
 .recurring {
     font-size: 1.3rem;
     text-align: right;
     margin: 0;
     padding: 0;
     margin-right: 1rem;
-    color: #761973;
+    color: ;
+} */
+
+.recurring {
+  color: #761973;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-right: 0.6rem;
 }
 
 #popupOverlay {
