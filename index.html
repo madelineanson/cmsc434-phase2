@@ -45,13 +45,15 @@
                             <label for="entryDescription">Description</label>
                             <input type="text" id="entryDescription" name="entryDescription" maxlength="200">
 
-                            <label for="entryCategory">Category</label>
-                            <select id="entryCategory" name="entryCategory">
-                                <option value="groceries">Groceries</option>
-                                <option value="fun">Fun</option>
-                                <option value="school">School</option>
-                                <option value="rent">Rent</option>
-                            </select>
+                            <div id="categoryRow">
+                                <label for="entryCategory">Category</label>
+                                <select id="entryCategory" name="entryCategory">
+                                    <option value="groceries">Groceries</option>
+                                    <option value="fun">Fun</option>
+                                    <option value="school">School</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
 
                             <!-- Income-only options (hidden for Charge) -->
                             <div id="incomeOptions" style="display:none; margin-top:0.75rem;">
@@ -73,14 +75,15 @@
                                     <div id="savingsControls" style="display:none; margin-top:0.5rem;">
                                         <label for="savingsGoalSelect">Savings Goal</label>
                                         <select id="savingsGoalSelect">
-                                            <option value="">(No goals yet)</option>
+                                            <option value="">Select goal...</option>
                                         </select>
-                                        <label for="savingsContributionType">Contribution</label>
+                                        <label for="savingsContributionType">Contribution Type</label>
                                         <select id="savingsContributionType">
-                                            <option value="all">All</option>
-                                            <option value="portion">Portion</option>
+                                            <option value="percent">Percent</option>
+                                            <option value="fixed">Fixed Amount</option>
                                         </select>
-                                        <input id="savingsContributionValue" type="number" min="0" step="0.01" placeholder="Amount or % (if portion)">
+                                        <label for="savingsContributionValue">Amount</label>
+                                        <input id="savingsContributionValue" type="number" min="0" step="0.01" placeholder="Enter amount or %">
                                     </div>
                                 </div>
                             </div>
@@ -134,15 +137,19 @@
                             <p class="category"><strong>Category:</strong> Fun</p>
                         </div>
                     </button>
+                    <button id="all-activity-button" href="all_activity.html">All Activity</button>
                 </div>
             </div>
             <div class="navbar">
                 <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i><span class="nav-label">Budgets</span></a>
                 <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i><span class="nav-label">Stats</span></a>
                 <a href="index.html" class="nav-icon active"><i class="fa-solid fa-receipt"></i><span class="nav-label">Entries</span></a>
-                <a href="profile.html" class="nav-icon"><i class="fa-solid fa-coins"></i><span class="nav-label">Savings</span></a>
+                <a href="savings.html" class="nav-icon"><i class="fa-solid fa-coins"></i><span class="nav-label">Savings</span></a>
             </div>
         </div>
+    </div>
+    <div id="imageKeyboard" style="display:none">
+      <img id="keyboardImage" src="" alt="keyboard placeholder">
     </div>
     <script rel="script" src="script.js"></script>
 </body>

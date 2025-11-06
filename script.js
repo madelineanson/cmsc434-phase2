@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Load entries from localStorage
     let entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
     let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
+    let savingsGoals = JSON.parse(localStorage.getItem('savingsGoals')) || [];
 
     // the default categories made are used when there's no plan for current month
     const defaultCategories = [
@@ -61,6 +62,19 @@ document.addEventListener('DOMContentLoaded', function () {
             opt.value = (cat || '').toString().trim().toLowerCase().replace(/\s+/g, '-');
             opt.textContent = cat;
             select.appendChild(opt);
+        });
+    }
+
+    function populateSavingsGoalSelect() {
+        const select = document.getElementById('savingsGoalSelect');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Select goal...</option>';
+        savingsGoals.forEach(goal => {
+            const option = document.createElement('option');
+            option.value = goal.id;
+            option.textContent = goal.name;
+            select.appendChild(option);
         });
     }
 
@@ -207,50 +221,96 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Render entries to the page
+    // render the most recent 4 entries (by date) into #recent-activity (no scrolling)
     function renderEntries() {
         const container = document.getElementById('recent-activity');
         if (!container) return;
 
-        // Find the "All Activity" button to preserve it
-        const allActivityBtn = document.getElementById('all-activity-button');
+        container.innerHTML = ''; // clear current content
 
-        // Clear existing entry buttons but keep the "All Activity" button
-        const buttons = container.querySelectorAll('.rounded-rectangle');
-        buttons.forEach(btn => btn.remove());
-
-        // Sort entries by date (newest first)
-        const sortedEntries = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Render each entry
-        sortedEntries.forEach((entry) => {
-            const button = document.createElement('button');
-            button.className = 'rounded-rectangle openPopupBtn';
-
-            const typeLabel = entry.type === 'credit' ? 'Income' : 'Charge';
-            const amountClass = entry.type === 'credit' ? 'amount-plus' : 'amount-minus';
-            const amountSign = entry.type === 'credit' ? '+' : '-';
-
-            button.innerHTML = `
-                <div class="details">
-                    <p class="date">${entry.date}</p>
-                    <p class="charge-or-credit">${typeLabel}</p>
-                    <p class="${amountClass}">${amountSign}$${entry.amount.toFixed(2)}</p>
-                </div>
-                <div class="about">
-                    <p class="description"><strong>Description:</strong> ${entry.description || 'N/A'}</p>
-                    ${entry.category ? `<p class="category"><strong>Category:</strong> ${entry.category}</p>` : ''}
-                </div>
-            `;
-
-            button.addEventListener('click', () => openDetailPopup(entry));
-
-            // Insert before the "All Activity" button if it exists
-            if (allActivityBtn) {
-                container.insertBefore(button, allActivityBtn);
-            } else {
-                container.appendChild(button);
-            }
+        // sort descending by date (newest first). Accepts YYYY-MM-DD or other parseable date strings.
+        const sorted = (entries || []).slice().sort((a, b) => {
+            const da = new Date(a.date || 0);
+            const db = new Date(b.date || 0);
+            return db - da;
         });
+
+        const recent = sorted.slice(0, 4);
+
+        if (recent.length === 0) {
+            const p = document.createElement('p');
+            p.style.textAlign = 'center';
+            p.style.color = '#555';
+            p.textContent = 'No recent activity.';
+            container.appendChild(p);
+        } else {
+            recent.forEach(entry => {
+                const btn = document.createElement('button');
+                btn.className = 'rounded-rectangle openPopupBtn';
+                btn.type = 'button';
+
+                const details = document.createElement('div');
+                details.className = 'details';
+                const about = document.createElement('div');
+                about.className = 'about';
+
+                const dateP = document.createElement('p');
+                dateP.className = 'date';
+                dateP.textContent = entry.date || '';
+
+                const typeP = document.createElement('p');
+                typeP.className = 'charge-or-credit';
+                typeP.textContent = (entry.type === 'credit' ? 'Credit' : 'Charge');
+
+                const amountP = document.createElement('p');
+                amountP.className = (entry.type === 'credit' ? 'amount-plus' : 'amount-minus');
+                const sign = (entry.type === 'credit' ? '+' : '-');
+                amountP.textContent = `${sign}$${(Number(entry.amount) || 0).toFixed(2)}`;
+
+                details.appendChild(dateP);
+                details.appendChild(typeP);
+                details.appendChild(amountP);
+
+                const descP = document.createElement('p');
+                descP.className = 'description';
+                descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
+
+                about.appendChild(descP);
+                if (entry.category) {
+                    const catP = document.createElement('p');
+                    catP.className = 'category';
+                    catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                    about.appendChild(catP);
+                }
+                if (entry.recurringId || entry.recurring) {
+                    const recP = document.createElement('p');
+                    recP.className = 'recurring';
+                    recP.textContent = '(Recurring)';
+                    about.appendChild(recP);
+                }
+
+                btn.appendChild(details);
+                btn.appendChild(about);
+
+                // open detail popup for this entry
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof openDetailPopup === 'function') openDetailPopup(entry);
+                });
+
+                container.appendChild(btn);
+            });
+        }
+
+        // append the All Activity button at the bottom so it's always available
+        const allBtn = document.createElement('button');
+        allBtn.id = 'all-activity-button';
+        allBtn.textContent = 'All Activity';
+        allBtn.addEventListener('click', () => {
+            // navigate to future all-activity page (you can change path later)
+            window.location.href = 'all_activity.html';
+        });
+        container.appendChild(allBtn);
     }
 
     // ensure recurring plans generate missed entries up to today
@@ -370,16 +430,41 @@ document.addEventListener('DOMContentLoaded', function () {
             category: newEntryForm.entryCategory.value,
         };
 
-        // savings contribution capture
-        if (contributeSavings && contributeSavings.checked) {
-            data.contribution = {
-                enabled: true,
-                goalId: savingsGoalSelect?.value || null,
-                type: savingsContributionType?.value || 'all',
-                value: parseFloat(savingsContributionValue?.value || 0)
-            };
-        } else {
-            data.contribution = { enabled: false };
+        // Handle savings contribution if applicable
+        if (data.type === 'credit' && contributeSavings && contributeSavings.checked) {
+            const goalId = savingsGoalSelect?.value;
+            const contributionType = savingsContributionType?.value;
+            const contributionValue = parseFloat(savingsContributionValue?.value || 0);
+
+            if (goalId && contributionValue > 0) {
+                const goal = savingsGoals.find(g => g.id === parseInt(goalId));
+                if (goal) {
+                    let contributionAmount = 0;
+                    if (contributionType === 'percent') {
+                        contributionAmount = (data.amount * contributionValue) / 100;
+                    } else {
+                        contributionAmount = contributionValue;
+                    }
+
+                    // Add contribution to goal
+                    if (!goal.contributions) goal.contributions = [];
+                    goal.contributions.push({
+                        date: data.date,
+                        amount: contributionAmount,
+                        entryId: data.id
+                    });
+
+                    // Update total saved
+                    goal.currentAmount = (goal.currentAmount || 0) + contributionAmount;
+                    
+                    localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+                    
+                    data.savingsContribution = {
+                        goalId: goalId,
+                        amount: contributionAmount
+                    };
+                }
+            }
         }
 
         entries.push(data);
@@ -399,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     amount: data.amount,
                     description: data.description,
                     category: data.category,
-                    contribution: data.contribution
                 }
             };
             recurringPlans.push(plan);
@@ -680,6 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderPlans() {
+        if (!plansList) return; // Exit if element doesn't exist
         plansList.innerHTML = '';
         if (!budgetPlans.length) {
             plansList.textContent = 'No saved plans.';
@@ -786,210 +871,405 @@ document.addEventListener('DOMContentLoaded', function () {
         closeNewPlan();
     });
 
-    // render to starttt!
-    renderPlans();
+    // ===== SAVINGS GOALS PAGE FUNCTIONALITY =====
+    
+    const newGoalButton = document.getElementById('new-goal-button');
+    const newGoalOverlay = document.getElementById('newGoalOverlay');
+    const closeNewGoalBtn = document.getElementById('closeNewGoalBtn');
+    const newGoalForm = document.getElementById('newGoalForm');
 
-    // on page load populate entry categories
-    populateEntryCategorySelect();
+    function getIconForGoal(iconType) {
+        const icons = {
+            'piggy-bank': '💰',
+            'plane': '✈️',
+            'home': '🏠',
+            'car': '🚗',
+            'graduation': '🎓',
+            'ring': '💍',
+            'umbrella': '☂️'
+        };
+        return icons[iconType] || '💰';
+    }
 
-    // open new-entry overlay (update to populate categories each time)
-    if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (entryDate) entryDate.value = new Date().toISOString().slice(0, 10);
-        newEntryForm.reset();
-        showIncomeOptions(false);
-        recurrenceControls.style.display = 'none';
-        savingsControls.style.display = 'none';
-        populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
-        newEntryOverlay.style.display = 'flex';
-    });
+    function renderSavingsGoals() {
+        const container = document.getElementById('savings-goals-list');
+        if (!container) return;
 
-    // virtual keyboard :)
-    (function () {
-        const VK_ID = 'virtualKeyboard';
-        const VK_KEY_CLASS = 'vk-key';
+        container.innerHTML = '';
 
-        function createKeyboard() {
-            if (document.getElementById(VK_ID)) return;
-            const vk = document.createElement('div');
-            vk.id = VK_ID;
-            vk.innerHTML = `
-      <div class="vk-inner">
-        <div class="vk-letters">
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="q">q</div>
-            <div class="${VK_KEY_CLASS}" data-key="w">w</div>
-            <div class="${VK_KEY_CLASS}" data-key="e">e</div>
-            <div class="${VK_KEY_CLASS}" data-key="r">r</div>
-            <div class="${VK_KEY_CLASS}" data-key="t">t</div>
-            <div class="${VK_KEY_CLASS}" data-key="y">y</div>
-            <div class="${VK_KEY_CLASS}" data-key="u">u</div>
-            <div class="${VK_KEY_CLASS}" data-key="i">i</div>
-            <div class="${VK_KEY_CLASS}" data-key="o">o</div>
-            <div class="${VK_KEY_CLASS}" data-key="p">p</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="a">a</div>
-            <div class="${VK_KEY_CLASS}" data-key="s">s</div>
-            <div class="${VK_KEY_CLASS}" data-key="d">d</div>
-            <div class="${VK_KEY_CLASS}" data-key="f">f</div>
-            <div class="${VK_KEY_CLASS}" data-key="g">g</div>
-            <div class="${VK_KEY_CLASS}" data-key="h">h</div>
-            <div class="${VK_KEY_CLASS}" data-key="j">j</div>
-            <div class="${VK_KEY_CLASS}" data-key="k">k</div>
-            <div class="${VK_KEY_CLASS}" data-key="l">l</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-fn="left">◀</div>
-            <div class="${VK_KEY_CLASS}" data-key="z">z</div>
-            <div class="${VK_KEY_CLASS}" data-key="x">x</div>
-            <div class="${VK_KEY_CLASS}" data-key="c">c</div>
-            <div class="${VK_KEY_CLASS}" data-key="v">v</div>
-            <div class="${VK_KEY_CLASS}" data-key="b">b</div>
-            <div class="${VK_KEY_CLASS}" data-key="n">n</div>
-            <div class="${VK_KEY_CLASS}" data-key="m">m</div>
-            <div class="${VK_KEY_CLASS}" data-fn="right">▶</div>
-          </div>
-          <div class="vk-row vk-row-bottom">
-            <div class="${VK_KEY_CLASS} vk-key-wide" data-fn="space">Space</div>
-            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
-            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
-            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
-            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
-          </div>
-        </div>
-
-        <div class="vk-numeric" style="display:none;">
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="7">7</div>
-            <div class="${VK_KEY_CLASS}" data-key="8">8</div>
-            <div class="${VK_KEY_CLASS}" data-key="9">9</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="4">4</div>
-            <div class="${VK_KEY_CLASS}" data-key="5">5</div>
-            <div class="${VK_KEY_CLASS}" data-key="6">6</div>
-          </div>
-          <div class="vk-row">
-            <div class="${VK_KEY_CLASS}" data-key="1">1</div>
-            <div class="${VK_KEY_CLASS}" data-key="2">2</div>
-            <div class="${VK_KEY_CLASS}" data-key="3">3</div>
-          </div>
-          <div class="vk-row vk-row-bottom">
-            <div class="${VK_KEY_CLASS} vk-key-wide" data-key="0">0</div>
-            <div class="${VK_KEY_CLASS}" data-fn="dot">.</div>
-            <div class="${VK_KEY_CLASS}" data-fn="back">⌫</div>
-            <div class="${VK_KEY_CLASS} vk-key-action" data-fn="enter">Enter</div>
-            <div class="${VK_KEY_CLASS} vk-key-done" data-fn="done">Done</div>
-          </div>
-        </div>
-      </div>
-    `;
-            vk.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2000;display:flex;justify-content:center;padding:.4rem;background:linear-gradient(180deg,#3f5474,#4B628B);box-shadow:0 -6px 18px rgba(0,0,0,.35);';
-            document.body.appendChild(vk);
-
-            vk.addEventListener('click', (e) => {
-                const btn = e.target.closest('.' + VK_KEY_CLASS);
-                if (!btn || !VirtualKeyboard.activeInput) return;
-                const fn = btn.dataset.fn;
-                const key = btn.dataset.key;
-                VirtualKeyboard.handleKey(fn, key);
-            });
+        if (savingsGoals.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; margin: 2rem;">No savings goals yet. Click + New Goal to create one!</p>';
+            return;
         }
 
-        const VirtualKeyboard = {
-            activeInput: null,
-            caretPos: 0,
-            mode: 'text',
-            showFor(input) {
-                if (!input) return;
-                createKeyboard();
-                this.activeInput = input;
-                // mark readonly to prevent native mobile keyboard; keep ability to paste programmatically
-                try { input.readOnly = true; } catch (e) { }
-                this.caretPos = input.value ? input.value.length : 0;
-                // determine numeric mode
-                this.mode = (input.type === 'number' || input.inputMode === 'numeric' || input.type === 'date') ? 'numeric' : 'text';
-                const vk = document.getElementById(VK_ID);
-                if (!vk) return;
-                vk.querySelector('.vk-letters').style.display = this.mode === 'text' ? 'block' : 'none';
-                vk.querySelector('.vk-numeric').style.display = this.mode === 'numeric' ? 'block' : 'none';
-                vk.style.display = 'flex';
-            },
-            hide() {
-                if (this.activeInput) {
-                    try { this.activeInput.readOnly = false; } catch (e) { }
-                }
-                this.activeInput = null;
-                const vk = document.getElementById(VK_ID);
-                if (vk) vk.style.display = 'none';
-            },
-            insertChar(ch) {
-                const input = this.activeInput;
-                if (!input) return;
-                const v = input.value || '';
-                const before = v.slice(0, this.caretPos);
-                const after = v.slice(this.caretPos);
-                input.value = before + ch + after;
-                this.caretPos += ch.length;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-            backspace() {
-                const input = this.activeInput;
-                if (!input || this.caretPos === 0) return;
-                const v = input.value || '';
-                input.value = v.slice(0, this.caretPos - 1) + v.slice(this.caretPos);
-                this.caretPos = Math.max(0, this.caretPos - 1);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-            moveLeft() { this.caretPos = Math.max(0, this.caretPos - 1); },
-            moveRight() {
-                const input = this.activeInput;
-                if (!input) return;
-                this.caretPos = Math.min((input.value || '').length, this.caretPos + 1);
-            },
-            handleKey(fn, key) {
-                if (!this.activeInput) return;
-                if (fn === 'space') this.insertChar(' ');
-                else if (fn === 'back') this.backspace();
-                else if (fn === 'left') this.moveLeft();
-                else if (fn === 'right') this.moveRight();
-                else if (fn === 'enter') {
-                    const form = this.activeInput.form;
-                    if (form) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                } else if (fn === 'done') this.hide();
-                else if (fn === 'dot') this.insertChar('.');
-                else if (key) this.insertChar(key);
-            }
-        };
+        savingsGoals.forEach(goal => {
+            const currentAmount = goal.currentAmount || 0;
+            const targetAmount = goal.targetAmount || 1;
+            const percentage = Math.min((currentAmount / targetAmount) * 100, 100);
 
-        // show keyboard for ANY input/textarea focus
+            const goalCard = document.createElement('button');
+            goalCard.className = 'rounded-rectangle';
+            goalCard.innerHTML = `
+                <div class="details">
+                    <p class="date">${getIconForGoal(goal.icon)}</p>
+                    <p class="charge-or-credit">${goal.name}</p>
+                    <p class="amount-plus">$${currentAmount.toFixed(2)}</p>
+                </div>
+                <div class="about">
+                    <p class="description"><strong>Target:</strong> $${targetAmount.toFixed(2)}</p>
+                    <p class="category"><strong>Progress:</strong> ${percentage.toFixed(0)}%</p>
+                </div>
+            `;
+            container.appendChild(goalCard);
+        });
+    }
+
+    if (newGoalButton) {
+        newGoalButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('New goal button clicked');
+            if (newGoalOverlay) {
+                console.log('Opening overlay');
+                newGoalOverlay.style.display = 'flex';
+            } else {
+                console.log('Overlay not found');
+            }
+        });
+    } else {
+        console.log('New goal button not found');
+    }
+
+    if (closeNewGoalBtn) {
+        closeNewGoalBtn.addEventListener('click', () => {
+            if (newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    if (newGoalOverlay) {
+        newGoalOverlay.addEventListener('click', (e) => {
+            if (e.target === newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    if (newGoalForm) {
+        newGoalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newGoal = {
+                id: Date.now(),
+                name: newGoalForm.goalName.value.trim(),
+                targetAmount: parseFloat(newGoalForm.goalTarget.value),
+                icon: newGoalForm.goalIcon.value,
+                currentAmount: 0,
+                contributions: []
+            };
+
+            savingsGoals.push(newGoal);
+            localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+
+            renderSavingsGoals();
+            populateSavingsGoalSelect();
+
+            newGoalForm.reset();
+            if (newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    // Initial render for savings page
+    renderSavingsGoals();
+    populateSavingsGoalSelect();
+
+    // image keyboard placeholders (alpha / numeric)
+    (function () {
+        const container = document.getElementById('imageKeyboard');
+        const img = document.getElementById('keyboardImage');
+        if (!container || !img) return;
+
+        const alphaPath = 'assets\\alpha-keyboard.jpg';
+        const numericPath = 'assets\\numeric-keyboard.jpg';
+
+        function showKeyboardFor(el) {
+            // choose numeric if input type/role indicates numeric
+            const isNumeric = el.type === 'number' || el.inputMode === 'numeric' || el.type === 'date' || el.dataset.numeric === 'true';
+            img.src = isNumeric ? numericPath : alphaPath;
+            container.style.display = 'flex';
+        }
+        function hideKeyboard() {
+            img.src = '';
+            container.style.display = 'none';
+        }
+
+        // show when any input/textarea focused
         document.addEventListener('focusin', (e) => {
             const el = e.target;
             if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
-            // ignore inputs explicitly opting out
-            if (el.dataset.noVk === 'true') return;
-            VirtualKeyboard.showFor(el);
+            if (el.dataset.noKeyboard === 'true') return;
+            showKeyboardFor(el);
         });
 
-        // hide when clicking outside inputs and keyboard
+        // hide when focus moves away (debounced to allow focusing another input)
+        document.addEventListener('focusout', (e) => {
+            setTimeout(() => {
+                const active = document.activeElement;
+                if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) {
+                    hideKeyboard();
+                }
+            }, 10);
+        });
+
+        // also hide when clicking outside inputs (safety)
         document.addEventListener('click', (e) => {
-            const vk = document.getElementById(VK_ID);
-            if (!vk || vk.style.display === 'none') return;
-            const clickedVK = vk.contains(e.target);
             const clickedInput = e.target.closest('input,textarea');
-            if (!clickedVK && !clickedInput) VirtualKeyboard.hide();
+            const clickedKeyboard = e.target.closest('#imageKeyboard');
+            if (!clickedInput && !clickedKeyboard) hideKeyboard();
         });
 
-        // ensure keyboard hides when inputs blur via code (or overlays close)
-        const obs = new MutationObserver(() => {
-            const vk = document.getElementById(VK_ID);
-            if (!vk) return;
-            // hide if no focused input
-            const active = document.activeElement;
-            if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) VirtualKeyboard.hide();
+        // hide when overlays close: observe overlay display changes (optional)
+        const overlays = ['popupOverlay', 'newEntryOverlay', 'newPlanOverlay', 'newGoalOverlay'];
+        overlays.forEach(id => {
+            const ov = document.getElementById(id);
+            if (!ov) return;
+            const obs = new MutationObserver(() => {
+                const style = getComputedStyle(ov);
+                if (style.display === 'none') {
+                    // if no input focused, hide the keyboard
+                    const active = document.activeElement;
+                    if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) hideKeyboard();
+                }
+            });
+            obs.observe(ov, { attributes: true, attributeFilter: ['style'] });
         });
-        obs.observe(document.body, { subtree: true, childList: true, attributes: true });
+
     })();
 
+    // hide category select when entry type is Income (credit)
+    (function () {
+        function updateCategoryVisibility() {
+            const categoryRow = document.getElementById('categoryRow');
+            const checked = document.querySelector('input[name="entryType"]:checked');
+            if (!categoryRow || !checked) return;
+            categoryRow.style.display = (checked.value === 'credit') ? 'none' : 'block';
+        }
+
+        // watch radio changes
+        document.querySelectorAll('input[name="entryType"]').forEach(r => {
+            r.addEventListener('change', updateCategoryVisibility);
+        });
+
+        // ensure correct state when new-entry overlay opens
+        const newEntryOverlay = document.getElementById('newEntryOverlay');
+        if (newEntryOverlay) {
+            const mo = new MutationObserver(() => {
+                if (getComputedStyle(newEntryOverlay).display !== 'none') updateCategoryVisibility();
+            });
+            mo.observe(newEntryOverlay, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+
+        // initial run on load
+        updateCategoryVisibility();
+    })();
+
+    // ===== All Activity page: filter / search / sort + render up to 5 on open =====
+    (function () {
+        const controlsPresent = document.getElementById('all-activity-controls');
+        if (!controlsPresent) return; // not on this page
+
+        const listEl = document.getElementById('all-activity-list');
+        const filterType = document.getElementById('filterType');
+        const filterDateFrom = document.getElementById('filterDateFrom');
+        const filterDateTo = document.getElementById('filterDateTo');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterDescription = document.getElementById('filterDescription');
+        const filterSort = document.getElementById('filterSort');
+        const applyBtn = document.getElementById('applyAllFilters');
+        const clearBtn = document.getElementById('clearAllFilters');
+
+        function getUniqueCategories() {
+            const cats = new Set();
+            (entries || []).forEach(e => {
+                if (e.category) cats.add(e.category);
+            });
+            return Array.from(cats).sort();
+        }
+
+        function populateCategoryFilter() {
+            filterCategory.innerHTML = '<option value="all">All</option>';
+            const cats = getUniqueCategories();
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                filterCategory.appendChild(opt);
+            });
+        }
+
+        function createCardForEntry(entry) {
+            const btn = document.createElement('button');
+            btn.className = 'rounded-rectangle openPopupBtn';
+            btn.type = 'button';
+
+            const details = document.createElement('div');
+            details.className = 'details';
+            const about = document.createElement('div');
+            about.className = 'about';
+
+            const dateP = document.createElement('p');
+            dateP.className = 'date';
+            dateP.textContent = entry.date || '';
+
+            const typeP = document.createElement('p');
+            typeP.className = 'charge-or-credit';
+            typeP.textContent = (entry.type === 'credit' ? 'Credit' : 'Charge');
+
+            const amountP = document.createElement('p');
+            amountP.className = (entry.type === 'credit' ? 'amount-plus' : 'amount-minus');
+            const sign = (entry.type === 'credit' ? '+' : '-');
+            amountP.textContent = `${sign}$${(Number(entry.amount) || 0).toFixed(2)}`;
+
+            details.appendChild(dateP);
+            details.appendChild(typeP);
+            details.appendChild(amountP);
+
+            const descP = document.createElement('p');
+            descP.className = 'description';
+            descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
+
+            about.appendChild(descP);
+            if (entry.category) {
+                const catP = document.createElement('p');
+                catP.className = 'category';
+                catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                about.appendChild(catP);
+            }
+            if (entry.recurringId || entry.recurring) {
+                const recP = document.createElement('p');
+                recP.className = 'recurring';
+                recP.textContent = '(Recurring)';
+                about.appendChild(recP);
+            }
+
+            btn.appendChild(details);
+            btn.appendChild(about);
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof openDetailPopup === 'function') openDetailPopup(entry);
+            });
+
+            return btn;
+        }
+
+        function applyAllFilters(returnAll = false) {
+            const typeVal = filterType.value;
+            const fromVal = filterDateFrom.value;
+            const toVal = filterDateTo.value;
+            const catVal = filterCategory.value;
+            const descVal = (filterDescription.value || '').trim().toLowerCase();
+            const sortVal = filterSort.value;
+
+            let results = (entries || []).slice();
+
+            // filter by type
+            if (typeVal && typeVal !== 'all') results = results.filter(r => r.type === typeVal);
+
+            // date range
+            if (fromVal) {
+                const fromDate = new Date(fromVal);
+                results = results.filter(r => new Date(r.date) >= fromDate);
+            }
+            if (toVal) {
+                const toDate = new Date(toVal);
+                // include the entire toDate day
+                toDate.setHours(23,59,59,999);
+                results = results.filter(r => new Date(r.date) <= toDate);
+            }
+
+            // category
+            if (catVal && catVal !== 'all') results = results.filter(r => r.category === catVal);
+
+            // description search
+            if (descVal) results = results.filter(r => (r.description || '').toLowerCase().includes(descVal));
+
+            // sort
+            results.sort((a,b) => {
+                if (sortVal === 'most-recent') return new Date(b.date) - new Date(a.date);
+                if (sortVal === 'least-recent') return new Date(a.date) - new Date(b.date);
+                if (sortVal === 'highest-amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+                if (sortVal === 'lowest-amount') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            renderAllActivity(results, returnAll ? undefined :  /* limit when called interactively */ undefined);
+            return results;
+        }
+
+        function renderAllActivity(results, limit) {
+            // if results not provided, compute current filtered results
+            if (!Array.isArray(results)) {
+                results = applyAllFilters(true);
+            }
+
+            // by default on first load we show top 5; otherwise show all results
+            const showing = (typeof limit === 'number') ? results.slice(0, limit) : results;
+
+            listEl.innerHTML = '';
+            if (!showing.length) {
+                const p = document.createElement('p');
+                p.style.textAlign = 'center';
+                p.style.color = '#666';
+                p.style.margin = '2rem';
+                p.textContent = 'No activity for selected filters.';
+                listEl.appendChild(p);
+            } else {
+                showing.forEach(entry => {
+                    listEl.appendChild(createCardForEntry(entry));
+                });
+            }
+
+            // if there are more than shown, show a footer hint + make list scrollable on this page
+            if (results.length > (limit || results.length)) {
+                const moreHint = document.createElement('div');
+                moreHint.style.textAlign = 'center';
+                moreHint.style.margin = '1rem';
+                moreHint.innerHTML = `<em>${results.length - (limit || results.length)} more entries — use filters or go to All Activity main view</em>`;
+                listEl.appendChild(moreHint);
+            }
+        }
+
+        // initial population: categories and show 5 most recent
+        // changing to 4!!
+        populateCategoryFilter();
+        // sort all entries by date descending and show first 5
+        const initialSorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+        renderAllActivity(initialSorted.slice(0,4), /* limit */ 5);
+
+        // wire controls
+        applyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const results = applyAllFilters(true);
+            renderAllActivity(results); // show all matched results (no 5 limit)
+        });
+
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            filterType.value = 'all';
+            filterDateFrom.value = '';
+            filterDateTo.value = '';
+            filterCategory.value = 'all';
+            filterDescription.value = '';
+            filterSort.value = 'most-recent';
+            populateCategoryFilter();
+            // show top 5 again
+            const sorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderAllActivity(sorted.slice(0,5), 5);
+        });
+
+        // live update of category list if entries change elsewhere (observe localStorage changes)
+        window.addEventListener('storage', (ev) => {
+            if (ev.key === 'financeEntries' || ev.key === 'budgetPlans') {
+                populateCategoryFilter();
+            }
+        });
+
+    })();
 });

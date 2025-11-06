@@ -8,7 +8,7 @@ body {
 }
 
 #app-logo {
-    width: 80%;
+    width: 50%;
     height: auto;
     display: block;
     margin: 0 auto;
@@ -22,7 +22,7 @@ body {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 7rem;
+    height: 6rem;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
@@ -207,7 +207,7 @@ body {
 
 #recent-activity-header {
     margin-left: 5%;
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #303e58;
 }
@@ -269,6 +269,7 @@ body {
     cursor: pointer;
     font-size: 1.5rem;
     font-weight: bold;
+    box-shadow: 5px 5px 5px rgb(96, 95, 95);
 }
 
 #all-activity-button:hover {
@@ -411,8 +412,8 @@ body {
     max-height: calc(100vh - 25rem);
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 2rem;
-    margin-bottom: 7rem;
+    padding-bottom: 0rem;
+    margin-bottom: 6rem;
 }
 
 #recent-activity::-webkit-scrollbar {
@@ -438,13 +439,13 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0.5rem;
     width: 90%;
-    height: 7.5rem;
+    height: 6rem;
     background-color: #ABB9D1;
     border-radius: 20px;
-    box-shadow: 10px 10px 5px rgb(96, 95, 95);
-    margin: 2rem auto 0;
+    box-shadow: 5px 5px 5px rgb(96, 95, 95);
+    margin: 0.7rem auto 0;
     border: 0;
     box-sizing: border-box;
     cursor: pointer;
@@ -657,74 +658,163 @@ body {
     margin-left: 0.25rem;
 }
 
-/* virtual keyboard */
-#virtualKeyboard {
+/* Savings Goals Styles */
+#new-goal-button {
+    display: block;
+    margin: 1.5rem auto;
+    padding: 0.625rem 1.25rem;
+    background-color: #4B628B;
+    color: #F4FBFF;
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    font-size: 1.8rem;
+    font-weight: bold;
+    box-shadow: 5px 5px 5px rgb(96, 95, 95);
+}
+
+#new-goal-button:hover {
+    background-color: #3A4A6E;
+}
+
+#savings-header {
+    margin-left: 5%;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #303e58;
+}
+
+#savings-goals-list {
+    max-height: calc(100vh - 25rem);
+    overflow-y: auto;
+    padding-bottom: 8rem;
+    margin-bottom: 1rem;
+}
+
+#savings-goals-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+#savings-goals-list::-webkit-scrollbar-track {
+    background: rgba(171, 185, 209, 0.2);
+    border-radius: 10px;
+}
+
+#savings-goals-list::-webkit-scrollbar-thumb {
+    background: #4B628B;
+    border-radius: 10px;
+}
+
+#savings-goals-list::-webkit-scrollbar-thumb:hover {
+    background: #3A4A6E;
+}
+
+#newGoalOverlay {
     display: none;
     position: fixed;
-    z-index: 2000;
+    z-index: 1100;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(180deg, #3f5474, #4B628B);
-    padding: 0.5rem;
-    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    gap: 0.3rem;
-    font-family: inherit;
 }
 
-/* rows */
-#virtualKeyboard .vk-row {
-    display: flex;
-    gap: 0.4rem;
-    justify-content: center;
-    width: 100%;
-    max-width: 920px;
-    box-sizing: border-box;
-}
-
-/* keys */
-.vk-key {
-    user-select: none;
-    -webkit-user-select: none;
-    background: #F4FBFF;
-    color: #2b2b2b;
-    padding: 0.45rem 0.6rem;
+#newGoalContent {
+    background-color: #F4FBFF;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 480px;
     border-radius: 8px;
-    min-width: 2rem;
-    text-align: center;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
-    font-size: 1.1rem;
-    cursor: pointer;
+    text-align: left;
 }
 
-/* wide keys */
-.vk-key-wide {
-    min-width: 8rem;
-    flex: 1;
+#imageKeyboard {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10rem;
+  max-height: 35vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 2000;
+  pointer-events: none;
+  background: transparent;
+  transition: opacity 180ms ease;
+  opacity: 1;
 }
 
-.vk-key-action {
-    background: #DD8A4E;
-    color: #fff;
+#imageKeyboard[style*="display:none"] {
+  opacity: 0;
 }
 
-.vk-key-done {
-    background: #3A6A9A;
-    color: #fff;
+#imageKeyboard img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: 900px;
+  pointer-events: none;
 }
 
-#virtualKeyboard.vk-numeric .vk-row-letters {
-    display: none;
+/* all activity */
+#all-activity-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 0.75rem auto 1rem;
+  width: 92%;
+  max-width: 1100px;
+  box-sizing: border-box;
 }
 
-.navbar {
-    z-index: 1000;
+#all-activity-controls .control-group {
+  display:flex;
+  flex-direction:column;
+  gap:0.35rem;
+  min-width: 10rem;
 }
 
-/* existing */
-#virtualKeyboard {
-    z-index: 2000;
+#all-activity-controls label {
+  font-size: 0.85rem;
+  color: #303e58;
+  font-weight: 600;
+}
+
+#all-activity-controls input[type="date"],
+#all-activity-controls select,
+#all-activity-controls input[type="text"] {
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.small-btn {
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  border: none;
+  background: #4B628B;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.small-btn:hover { background: #3A4A6E; }
+
+#all-activity-list {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 0rem;
+  box-sizing: border-box;
+  padding-bottom: 0;
 }
