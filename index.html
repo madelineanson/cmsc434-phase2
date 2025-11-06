@@ -45,13 +45,15 @@
                             <label for="entryDescription">Description</label>
                             <input type="text" id="entryDescription" name="entryDescription" maxlength="200">
 
-                            <label for="entryCategory">Category</label>
-                            <select id="entryCategory" name="entryCategory">
-                                <option value="groceries">Groceries</option>
-                                <option value="fun">Fun</option>
-                                <option value="school">School</option>
-                                <option value="rent">Rent</option>
-                            </select>
+                            <div id="categoryRow">
+                                <label for="entryCategory">Category</label>
+                                <select id="entryCategory" name="entryCategory">
+                                    <option value="groceries">Groceries</option>
+                                    <option value="fun">Fun</option>
+                                    <option value="school">School</option>
+                                    <option value="rent">Rent</option>
+                                </select>
+                            </div>
 
                             <!-- Income-only options (hidden for Charge) -->
                             <div id="incomeOptions" style="display:none; margin-top:0.75rem;">

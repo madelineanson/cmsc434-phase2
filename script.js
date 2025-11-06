@@ -1021,4 +1021,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     })();
+
+    // hide category select when entry type is Income (credit)
+    (function () {
+        function updateCategoryVisibility() {
+            const categoryRow = document.getElementById('categoryRow');
+            const checked = document.querySelector('input[name="entryType"]:checked');
+            if (!categoryRow || !checked) return;
+            categoryRow.style.display = (checked.value === 'credit') ? 'none' : 'block';
+        }
+
+        // watch radio changes
+        document.querySelectorAll('input[name="entryType"]').forEach(r => {
+            r.addEventListener('change', updateCategoryVisibility);
+        });
+
+        // ensure correct state when new-entry overlay opens
+        const newEntryOverlay = document.getElementById('newEntryOverlay');
+        if (newEntryOverlay) {
+            const mo = new MutationObserver(() => {
+                if (getComputedStyle(newEntryOverlay).display !== 'none') updateCategoryVisibility();
+            });
+            mo.observe(newEntryOverlay, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+
+        // initial run on load
+        updateCategoryVisibility();
+    })();
 });
