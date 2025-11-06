@@ -221,50 +221,96 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Render entries to the page
+    // render the most recent 4 entries (by date) into #recent-activity (no scrolling)
     function renderEntries() {
         const container = document.getElementById('recent-activity');
         if (!container) return;
 
-        // Find the "All Activity" button to preserve it
-        const allActivityBtn = document.getElementById('all-activity-button');
+        container.innerHTML = ''; // clear current content
 
-        // Clear existing entry buttons but keep the "All Activity" button
-        const buttons = container.querySelectorAll('.rounded-rectangle');
-        buttons.forEach(btn => btn.remove());
-
-        // Sort entries by date (newest first)
-        const sortedEntries = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Render each entry
-        sortedEntries.forEach((entry) => {
-            const button = document.createElement('button');
-            button.className = 'rounded-rectangle openPopupBtn';
-
-            const typeLabel = entry.type === 'credit' ? 'Income' : 'Charge';
-            const amountClass = entry.type === 'credit' ? 'amount-plus' : 'amount-minus';
-            const amountSign = entry.type === 'credit' ? '+' : '-';
-
-            button.innerHTML = `
-                <div class="details">
-                    <p class="date">${entry.date}</p>
-                    <p class="charge-or-credit">${typeLabel}</p>
-                    <p class="${amountClass}">${amountSign}$${entry.amount.toFixed(2)}</p>
-                </div>
-                <div class="about">
-                    <p class="description"><strong>Description:</strong> ${entry.description || 'N/A'}</p>
-                    ${entry.category ? `<p class="category"><strong>Category:</strong> ${entry.category}</p>` : ''}
-                </div>
-            `;
-
-            button.addEventListener('click', () => openDetailPopup(entry));
-
-            // Insert before the "All Activity" button if it exists
-            if (allActivityBtn) {
-                container.insertBefore(button, allActivityBtn);
-            } else {
-                container.appendChild(button);
-            }
+        // sort descending by date (newest first). Accepts YYYY-MM-DD or other parseable date strings.
+        const sorted = (entries || []).slice().sort((a, b) => {
+            const da = new Date(a.date || 0);
+            const db = new Date(b.date || 0);
+            return db - da;
         });
+
+        const recent = sorted.slice(0, 4);
+
+        if (recent.length === 0) {
+            const p = document.createElement('p');
+            p.style.textAlign = 'center';
+            p.style.color = '#555';
+            p.textContent = 'No recent activity.';
+            container.appendChild(p);
+        } else {
+            recent.forEach(entry => {
+                const btn = document.createElement('button');
+                btn.className = 'rounded-rectangle openPopupBtn';
+                btn.type = 'button';
+
+                const details = document.createElement('div');
+                details.className = 'details';
+                const about = document.createElement('div');
+                about.className = 'about';
+
+                const dateP = document.createElement('p');
+                dateP.className = 'date';
+                dateP.textContent = entry.date || '';
+
+                const typeP = document.createElement('p');
+                typeP.className = 'charge-or-credit';
+                typeP.textContent = (entry.type === 'credit' ? 'Credit' : 'Charge');
+
+                const amountP = document.createElement('p');
+                amountP.className = (entry.type === 'credit' ? 'amount-plus' : 'amount-minus');
+                const sign = (entry.type === 'credit' ? '+' : '-');
+                amountP.textContent = `${sign}$${(Number(entry.amount) || 0).toFixed(2)}`;
+
+                details.appendChild(dateP);
+                details.appendChild(typeP);
+                details.appendChild(amountP);
+
+                const descP = document.createElement('p');
+                descP.className = 'description';
+                descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
+
+                about.appendChild(descP);
+                if (entry.category) {
+                    const catP = document.createElement('p');
+                    catP.className = 'category';
+                    catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                    about.appendChild(catP);
+                }
+                if (entry.recurringId || entry.recurring) {
+                    const recP = document.createElement('p');
+                    recP.className = 'recurring';
+                    recP.textContent = '(Recurring)';
+                    about.appendChild(recP);
+                }
+
+                btn.appendChild(details);
+                btn.appendChild(about);
+
+                // open detail popup for this entry
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof openDetailPopup === 'function') openDetailPopup(entry);
+                });
+
+                container.appendChild(btn);
+            });
+        }
+
+        // append the All Activity button at the bottom so it's always available
+        const allBtn = document.createElement('button');
+        allBtn.id = 'all-activity-button';
+        allBtn.textContent = 'All Activity';
+        allBtn.addEventListener('click', () => {
+            // navigate to future all-activity page (you can change path later)
+            window.location.href = 'all_activity.html';
+        });
+        container.appendChild(allBtn);
     }
 
     // ensure recurring plans generate missed entries up to today
@@ -803,25 +849,6 @@ document.addEventListener('DOMContentLoaded', function () {
         renderPlans();
         populateEntryCategorySelect(); // <-- refresh entry categories if plan affects current month
         closeNewPlan();
-    });
-
-    // render to starttt!
-    renderPlans();
-
-    // on page load populate entry categories
-    populateEntryCategorySelect();
-
-    // open new-entry overlay (update to populate categories each time)
-    if (newEntryButton) newEntryButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (entryDate) entryDate.value = new Date().toISOString().slice(0, 10);
-        newEntryForm.reset();
-        showIncomeOptions(false);
-        recurrenceControls.style.display = 'none';
-        savingsControls.style.display = 'none';
-        populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
-        populateSavingsGoalSelect(); // populate savings goals
-        newEntryOverlay.style.display = 'flex';
     });
 
     // ===== SAVINGS GOALS PAGE FUNCTIONALITY =====
