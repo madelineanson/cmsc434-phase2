@@ -102,15 +102,39 @@ document.addEventListener('DOMContentLoaded', function () {
     function openDetailPopup(entry) {
         if (!popupOverlay || !popupContent) return;
 
-        // view mode: show bigger details + Edit/Delete buttons
+        // build recurring text if present
+        let recText = '';
+        if (entry.recurringId) {
+            const plan = (recurringPlans || []).find(p => p.id === entry.recurringId);
+            if (plan && plan.frequency) recText = `(recurring ${plan.frequency})`;
+            else recText = '(recurring)';
+        } else if (entry.recurring && typeof entry.recurring === 'string') {
+            recText = `(recurring ${entry.recurring})`;
+        }
+
+        // build savings contribution text if present
+        let contribText = '';
+        if (entry.savingsContribution) {
+            contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)} to goal ${entry.savingsContribution.goalId || ''}`;
+        } else if (entry.contribution && entry.contribution.enabled) {
+            const v = entry.contribution.value || 0;
+            contribText = entry.contribution.type === 'all' ? `Contributed all to goal ${entry.contribution.goalId || ''}` : `Contributed ${v}${entry.contribution.type === 'percent' ? '%' : ''} to goal ${entry.contribution.goalId || ''}`;
+        }
+
+        // prepare category / recurring display
+        const categoryDisplay = (entry.type === 'credit')
+            ? (recText ? `<p class="recurring"><strong>${recText}</strong></p>` : '')
+            : `<p><strong>Category:</strong> ${entry.category || 'N/A'}</p>`;
+
         popupContent.innerHTML = `
             <h2>Transaction Details</h2>
-            <div style="text-align: left; margin: 1rem 0;">
-                <p><strong>Date:</strong> ${entry.date}</p>
+            <div style="text-align:left; margin:1rem 0;">
+                <p><strong>Date:</strong> ${entry.date || 'N/A'}</p>
                 <p><strong>Type:</strong> ${entry.type === 'credit' ? 'Income' : 'Charge'}</p>
-                <p class="${entry.type === 'credit' ? 'amount-plus' : 'amount-minus'}"><strong>Amount:</strong> ${entry.type === 'credit' ? '+' : '-'}$${entry.amount.toFixed(2)}</p>
+                <p class="${entry.type === 'credit' ? 'amount-plus' : 'amount-minus'}"><strong>Amount:</strong> ${entry.type === 'credit' ? '+' : '-'}$${Number(entry.amount || 0).toFixed(2)}</p>
                 <p><strong>Description:</strong> ${entry.description || 'N/A'}</p>
-                <p><strong>Category:</strong> ${entry.category || 'N/A'}</p>
+                ${categoryDisplay}
+                ${contribText ? `<p class="description"><strong>${contribText}</strong></p>` : ''}
             </div>
             <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:1rem;">
                 <button id="editTxnBtn" class="closePopupBtn">Edit</button>
@@ -138,12 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function openEditPopup(entry) {
         if (!popupOverlay || !popupContent) return;
 
-        // build edit form (reuse popup-form styles)
         popupContent.innerHTML = `
             <h2>Edit Transaction</h2>
             <form id="editTxnForm" class="popup-form" style="text-align:left;">
                 <label for="editEntryDate">Date</label>
-                <input type="date" id="editEntryDate" name="editEntryDate" value="${entry.date}" required>
+                <input type="date" id="editEntryDate" name="editEntryDate" value="${entry.date || ''}" required>
 
                 <fieldset class="entry-type">
                     <legend>Type</legend>
@@ -152,19 +175,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 </fieldset>
 
                 <label for="editEntryAmount">Amount</label>
-                <input type="number" id="editEntryAmount" name="editEntryAmount" step="0.01" min="0" value="${entry.amount}" required>
+                <input type="number" id="editEntryAmount" name="editEntryAmount" step="0.01" min="0" value="${Number(entry.amount || 0).toFixed(2)}" required>
 
                 <label for="editEntryDescription">Description</label>
-                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description || '').replace(/"/g, '&quot;')}">
+                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description || '').replace(/"/g,'&quot;')}">
 
-                <label for="editEntryCategory">Category</label>
-                <select id="editEntryCategory" name="editEntryCategory">
-                    <option value="">(None)</option>
-                    <option value="groceries">Groceries</option>
-                    <option value="fun">Fun</option>
-                    <option value="school">School</option>
-                    <option value="rent">Rent</option>
-                </select>
+                <div id="editCategoryRow">
+                    <label for="editEntryCategory">Category</label>
+                    <select id="editEntryCategory" name="editEntryCategory">
+                        <option value="">(None)</option>
+                        <option value="groceries">Groceries</option>
+                        <option value="fun">Fun</option>
+                        <option value="school">School</option>
+                        <option value="rent">Rent</option>
+                    </select>
+                </div>
 
                 <div style="margin-top:1rem; display:flex; gap:0.5rem; align-items:center;">
                     <button type="submit" id="saveEditedBtn" class="popup-form #saveEntryBtn">Save</button>
@@ -178,14 +203,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const catSelect = document.getElementById('editEntryCategory');
         if (catSelect) catSelect.value = entry.category || '';
 
-        // show overlay (already visible if coming from view)
+        // hide category row if entry is income
+        const editCategoryRow = document.getElementById('editCategoryRow');
+        function updateEditCategoryVisibility() {
+            const checked = document.querySelector('input[name="editEntryType"]:checked');
+            if (!editCategoryRow || !checked) return;
+            editCategoryRow.style.display = (checked.value === 'credit') ? 'none' : 'block';
+        }
+        document.querySelectorAll('input[name="editEntryType"]').forEach(r => r.addEventListener('change', updateEditCategoryVisibility));
+        updateEditCategoryVisibility();
+
         popupOverlay.style.display = 'flex';
 
         const editForm = document.getElementById('editTxnForm');
         const cancelBtn = document.getElementById('cancelEditBtn');
         const deleteBtn = document.getElementById('deleteWhileEditingBtn');
 
-        // save handler
         editForm.addEventListener('submit', function (e) {
             e.preventDefault();
             const updated = {
@@ -194,22 +227,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: document.querySelector('input[name="editEntryType"]:checked').value,
                 amount: parseFloat(document.getElementById('editEntryAmount').value || 0),
                 description: document.getElementById('editEntryDescription').value.trim(),
-                category: document.getElementById('editEntryCategory').value
+                category: document.getElementById('editEntryCategory') ? document.getElementById('editEntryCategory').value : ''
             };
 
             // replace in entries array
-            entries = entries.map(en => en.id === entry.id ? updated : en);
+            entries = entries.map(en => en.id === entry.id ? Object.assign({}, en, updated) : en);
             localStorage.setItem('financeEntries', JSON.stringify(entries));
             closeOverlay();
             renderEntries();
         });
 
-        // cancel -> go back to view mode for same entry
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => openDetailPopup(entry));
         }
 
-        // delete while editing
         if (deleteBtn) {
             deleteBtn.addEventListener('click', () => {
                 entries = entries.filter(e => e.id !== entry.id);
@@ -276,17 +307,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
 
                 about.appendChild(descP);
-                if (entry.category) {
-                    const catP = document.createElement('p');
-                    catP.className = 'category';
-                    catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
-                    about.appendChild(catP);
-                }
-                if (entry.recurringId || entry.recurring) {
-                    const recP = document.createElement('p');
-                    recP.className = 'recurring';
-                    recP.textContent = '(Recurring)';
-                    about.appendChild(recP);
+
+                // For income entries do NOT show category; show recurring frequency text instead (purple)
+                if (entry.type === 'credit') {
+                    let recText = '';
+                    if (entry.recurringId) {
+                        const plan = (recurringPlans || []).find(p => p.id === entry.recurringId);
+                        if (plan && plan.frequency) recText = `(recurring ${plan.frequency})`;
+                        else recText = '(recurring)';
+                    } else if (entry.recurring && typeof entry.recurring === 'string') {
+                        console.log('entry.recurring:', entry.recurring);
+                        recText = `(recurring ${entry.recurring})`;
+                    }
+                    if (recText) {
+                        const recP = document.createElement('p');
+                        recP.className = 'recurring';
+                        recP.textContent = recText;
+                        about.appendChild(recP);
+                    }
+                } else {
+                    if (entry.category) {
+                        const catP = document.createElement('p');
+                        catP.className = 'category';
+                        catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                        about.appendChild(catP);
+                    }
+                    if (entry.recurringId || entry.recurring) {
+                        const recP = document.createElement('p');
+                        recP.className = 'recurring';
+                        recP.textContent = '(Recurring)';
+                        about.appendChild(recP);
+                    }
                 }
 
                 btn.appendChild(details);
@@ -427,68 +478,52 @@ document.addEventListener('DOMContentLoaded', function () {
             type: newEntryForm.entryType.value,
             amount: parseFloat(newEntryForm.entryAmount.value || 0),
             description: newEntryForm.entryDescription.value.trim(),
-            category: newEntryForm.entryCategory.value,
+            category: newEntryForm.entryCategory ? newEntryForm.entryCategory.value : ''
         };
 
-        // Handle savings contribution if applicable
-        if (data.type === 'credit' && contributeSavings && contributeSavings.checked) {
-            const goalId = savingsGoalSelect?.value;
-            const contributionType = savingsContributionType?.value;
-            const contributionValue = parseFloat(savingsContributionValue?.value || 0);
-
-            if (goalId && contributionValue > 0) {
-                const goal = savingsGoals.find(g => g.id === parseInt(goalId));
-                if (goal) {
-                    let contributionAmount = 0;
-                    if (contributionType === 'percent') {
-                        contributionAmount = (data.amount * contributionValue) / 100;
-                    } else {
-                        contributionAmount = contributionValue;
-                    }
-
-                    // Add contribution to goal
-                    if (!goal.contributions) goal.contributions = [];
-                    goal.contributions.push({
-                        date: data.date,
-                        amount: contributionAmount,
-                        entryId: data.id
-                    });
-
-                    // Update total saved
-                    goal.currentAmount = (goal.currentAmount || 0) + contributionAmount;
-                    
-                    localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
-                    
-                    data.savingsContribution = {
-                        goalId: goalId,
-                        amount: contributionAmount
-                    };
-                }
-            }
+        // savings contribution capture
+        if (contributeSavings && contributeSavings.checked) {
+            data.contribution = {
+                enabled: true,
+                goalId: savingsGoalSelect?.value || null,
+                type: savingsContributionType?.value || 'all',
+                value: parseFloat(savingsContributionValue?.value || 0)
+            };
+        } else {
+            data.contribution = { enabled: false };
         }
 
-        entries.push(data);
-        localStorage.setItem('financeEntries', JSON.stringify(entries));
-
-        // If income + recurring, create a recurringPlan entry
+        // If income + recurring, create recurringPlan first so we can tag the saved entry with plan.id
+        let createdPlan = null;
         if (data.type === 'credit' && entryRecurringCheckbox && entryRecurringCheckbox.checked) {
             const freq = recurrenceFrequency.value || 'monthly';
             const nextDate = advanceDateByFrequency(data.date, freq); // next occurrence after saved date
             const plan = {
-                id: Date.now() + Math.floor(Math.random() * 1000),
+                id: Date.now() + Math.floor(Math.random()*1000),
                 frequency: freq,
                 nextDate: nextDate,
                 templateEntry: {
-                    // template for generated entries (type, amount, description, category, contribution)
                     type: data.type,
                     amount: data.amount,
                     description: data.description,
                     category: data.category,
+                    contribution: data.contribution
                 }
             };
             recurringPlans.push(plan);
             localStorage.setItem('recurringPlans', JSON.stringify(recurringPlans));
+            createdPlan = plan;
         }
+
+        // if we created a recurring plan tag the actual saved entry so UI shows "(recurring ...)"
+        if (createdPlan) {
+            data.recurringId = createdPlan.id;
+            // also keep a readable recurring string if you rely on it elsewhere
+            data.recurring = createdPlan.frequency;
+        }
+
+        entries.push(data);
+        localStorage.setItem('financeEntries', JSON.stringify(entries));
 
         // close and refresh UI
         newEntryOverlay.style.display = 'none';
@@ -1135,17 +1170,36 @@ document.addEventListener('DOMContentLoaded', function () {
             descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
 
             about.appendChild(descP);
-            if (entry.category) {
-                const catP = document.createElement('p');
-                catP.className = 'category';
-                catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
-                about.appendChild(catP);
-            }
-            if (entry.recurringId || entry.recurring) {
-                const recP = document.createElement('p');
-                recP.className = 'recurring';
-                recP.textContent = '(Recurring)';
-                about.appendChild(recP);
+
+            // For income entries do NOT show category; show recurring frequency text instead (purple)
+            if (entry.type === 'credit') {
+                let recText = '';
+                if (entry.recurringId) {
+                    const plan = (recurringPlans || []).find(p => p.id === entry.recurringId);
+                    if (plan && plan.frequency) recText = `(recurring ${plan.frequency})`;
+                    else recText = '(recurring)';
+                } else if (entry.recurring && typeof entry.recurring === 'string') {
+                    recText = `(recurring ${entry.recurring})`;
+                }
+                if (recText) {
+                    const recP = document.createElement('p');
+                    recP.className = 'recurring';
+                    recP.textContent = recText;
+                    about.appendChild(recP);
+                }
+            } else {
+                if (entry.category) {
+                    const catP = document.createElement('p');
+                    catP.className = 'category';
+                    catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                    about.appendChild(catP);
+                }
+                if (entry.recurringId || entry.recurring) {
+                    const recP = document.createElement('p');
+                    recP.className = 'recurring';
+                    recP.textContent = '(Recurring)';
+                    about.appendChild(recP);
+                }
             }
 
             btn.appendChild(details);
