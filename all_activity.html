@@ -20,6 +20,57 @@
             <a href="index.html" class="back-button"><i class="fa-solid fa-arrow-left"></i><span
                     class="back-text">Back</span></a>
             <h1 class="budget-header">All Activity:</h1>
+
+            <!-- NEW: controls for filtering / searching / sorting -->
+            <div id="all-activity-controls" class="controls-row">
+                <div class="control-group">
+                    <label>Type</label>
+                    <select id="filterType">
+                        <option value="all">All</option>
+                        <option value="debit">Charge</option>
+                        <option value="credit">Income</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Date From</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+                <div class="control-group">
+                    <label>Date To</label>
+                    <input type="date" id="filterDateTo">
+                </div>
+
+                <div class="control-group">
+                    <label>Category</label>
+                    <select id="filterCategory">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Description</label>
+                    <input type="text" id="filterDescription" placeholder="Search descriptions">
+                </div>
+
+                <div class="control-group">
+                    <label>Sort</label>
+                    <select id="filterSort">
+                        <option value="most-recent">Most recent</option>
+                        <option value="least-recent">Least recent</option>
+                        <option value="highest-amount">Highest amount</option>
+                        <option value="lowest-amount">Lowest amount</option>
+                    </select>
+                </div>
+
+                <div class="control-group" style="align-self:flex-end;">
+                    <button id="applyAllFilters" class="small-btn">Apply</button>
+                    <button id="clearAllFilters" class="small-btn">Clear</button>
+                </div>
+            </div>
+
+            <div id="all-activity-list"></div>
+
             <div class="navbar">
                 <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i><span class="nav-label">Budgets</span></a>
                 <a href="stats.html" class="nav-icon"><i class="fa-solid fa-chart-line"></i><span class="nav-label">Stats</span></a>

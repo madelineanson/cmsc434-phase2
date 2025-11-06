@@ -1048,4 +1048,208 @@ document.addEventListener('DOMContentLoaded', function () {
         // initial run on load
         updateCategoryVisibility();
     })();
+
+    // ===== All Activity page: filter / search / sort + render up to 5 on open =====
+    (function () {
+        const controlsPresent = document.getElementById('all-activity-controls');
+        if (!controlsPresent) return; // not on this page
+
+        const listEl = document.getElementById('all-activity-list');
+        const filterType = document.getElementById('filterType');
+        const filterDateFrom = document.getElementById('filterDateFrom');
+        const filterDateTo = document.getElementById('filterDateTo');
+        const filterCategory = document.getElementById('filterCategory');
+        const filterDescription = document.getElementById('filterDescription');
+        const filterSort = document.getElementById('filterSort');
+        const applyBtn = document.getElementById('applyAllFilters');
+        const clearBtn = document.getElementById('clearAllFilters');
+
+        function getUniqueCategories() {
+            const cats = new Set();
+            (entries || []).forEach(e => {
+                if (e.category) cats.add(e.category);
+            });
+            return Array.from(cats).sort();
+        }
+
+        function populateCategoryFilter() {
+            filterCategory.innerHTML = '<option value="all">All</option>';
+            const cats = getUniqueCategories();
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                filterCategory.appendChild(opt);
+            });
+        }
+
+        function createCardForEntry(entry) {
+            const btn = document.createElement('button');
+            btn.className = 'rounded-rectangle openPopupBtn';
+            btn.type = 'button';
+
+            const details = document.createElement('div');
+            details.className = 'details';
+            const about = document.createElement('div');
+            about.className = 'about';
+
+            const dateP = document.createElement('p');
+            dateP.className = 'date';
+            dateP.textContent = entry.date || '';
+
+            const typeP = document.createElement('p');
+            typeP.className = 'charge-or-credit';
+            typeP.textContent = (entry.type === 'credit' ? 'Credit' : 'Charge');
+
+            const amountP = document.createElement('p');
+            amountP.className = (entry.type === 'credit' ? 'amount-plus' : 'amount-minus');
+            const sign = (entry.type === 'credit' ? '+' : '-');
+            amountP.textContent = `${sign}$${(Number(entry.amount) || 0).toFixed(2)}`;
+
+            details.appendChild(dateP);
+            details.appendChild(typeP);
+            details.appendChild(amountP);
+
+            const descP = document.createElement('p');
+            descP.className = 'description';
+            descP.innerHTML = `<strong>Description:</strong> ${entry.description || '—'}`;
+
+            about.appendChild(descP);
+            if (entry.category) {
+                const catP = document.createElement('p');
+                catP.className = 'category';
+                catP.innerHTML = `<strong>Category:</strong> ${entry.category || '—'}`;
+                about.appendChild(catP);
+            }
+            if (entry.recurringId || entry.recurring) {
+                const recP = document.createElement('p');
+                recP.className = 'recurring';
+                recP.textContent = '(Recurring)';
+                about.appendChild(recP);
+            }
+
+            btn.appendChild(details);
+            btn.appendChild(about);
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof openDetailPopup === 'function') openDetailPopup(entry);
+            });
+
+            return btn;
+        }
+
+        function applyAllFilters(returnAll = false) {
+            const typeVal = filterType.value;
+            const fromVal = filterDateFrom.value;
+            const toVal = filterDateTo.value;
+            const catVal = filterCategory.value;
+            const descVal = (filterDescription.value || '').trim().toLowerCase();
+            const sortVal = filterSort.value;
+
+            let results = (entries || []).slice();
+
+            // filter by type
+            if (typeVal && typeVal !== 'all') results = results.filter(r => r.type === typeVal);
+
+            // date range
+            if (fromVal) {
+                const fromDate = new Date(fromVal);
+                results = results.filter(r => new Date(r.date) >= fromDate);
+            }
+            if (toVal) {
+                const toDate = new Date(toVal);
+                // include the entire toDate day
+                toDate.setHours(23,59,59,999);
+                results = results.filter(r => new Date(r.date) <= toDate);
+            }
+
+            // category
+            if (catVal && catVal !== 'all') results = results.filter(r => r.category === catVal);
+
+            // description search
+            if (descVal) results = results.filter(r => (r.description || '').toLowerCase().includes(descVal));
+
+            // sort
+            results.sort((a,b) => {
+                if (sortVal === 'most-recent') return new Date(b.date) - new Date(a.date);
+                if (sortVal === 'least-recent') return new Date(a.date) - new Date(b.date);
+                if (sortVal === 'highest-amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+                if (sortVal === 'lowest-amount') return (Number(a.amount) || 0) - (Number(b.amount) || 0);
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            renderAllActivity(results, returnAll ? undefined :  /* limit when called interactively */ undefined);
+            return results;
+        }
+
+        function renderAllActivity(results, limit) {
+            // if results not provided, compute current filtered results
+            if (!Array.isArray(results)) {
+                results = applyAllFilters(true);
+            }
+
+            // by default on first load we show top 5; otherwise show all results
+            const showing = (typeof limit === 'number') ? results.slice(0, limit) : results;
+
+            listEl.innerHTML = '';
+            if (!showing.length) {
+                const p = document.createElement('p');
+                p.style.textAlign = 'center';
+                p.style.color = '#666';
+                p.style.margin = '2rem';
+                p.textContent = 'No activity for selected filters.';
+                listEl.appendChild(p);
+            } else {
+                showing.forEach(entry => {
+                    listEl.appendChild(createCardForEntry(entry));
+                });
+            }
+
+            // if there are more than shown, show a footer hint + make list scrollable on this page
+            if (results.length > (limit || results.length)) {
+                const moreHint = document.createElement('div');
+                moreHint.style.textAlign = 'center';
+                moreHint.style.margin = '1rem';
+                moreHint.innerHTML = `<em>${results.length - (limit || results.length)} more entries — use filters or go to All Activity main view</em>`;
+                listEl.appendChild(moreHint);
+            }
+        }
+
+        // initial population: categories and show 5 most recent
+        // changing to 4!!
+        populateCategoryFilter();
+        // sort all entries by date descending and show first 5
+        const initialSorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+        renderAllActivity(initialSorted.slice(0,4), /* limit */ 5);
+
+        // wire controls
+        applyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const results = applyAllFilters(true);
+            renderAllActivity(results); // show all matched results (no 5 limit)
+        });
+
+        clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            filterType.value = 'all';
+            filterDateFrom.value = '';
+            filterDateTo.value = '';
+            filterCategory.value = 'all';
+            filterDescription.value = '';
+            filterSort.value = 'most-recent';
+            populateCategoryFilter();
+            // show top 5 again
+            const sorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderAllActivity(sorted.slice(0,5), 5);
+        });
+
+        // live update of category list if entries change elsewhere (observe localStorage changes)
+        window.addEventListener('storage', (ev) => {
+            if (ev.key === 'financeEntries' || ev.key === 'budgetPlans') {
+                populateCategoryFilter();
+            }
+        });
+
+    })();
 });
