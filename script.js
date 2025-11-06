@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Load entries from localStorage
     let entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
     let recurringPlans = JSON.parse(localStorage.getItem('recurringPlans')) || [];
+    let savingsGoals = JSON.parse(localStorage.getItem('savingsGoals')) || [];
 
     // the default categories i made are used when there's no plan for current month
     const defaultCategories = [
@@ -61,6 +62,19 @@ document.addEventListener('DOMContentLoaded', function () {
             opt.value = (cat || '').toString().trim().toLowerCase().replace(/\s+/g, '-');
             opt.textContent = cat;
             select.appendChild(opt);
+        });
+    }
+
+    function populateSavingsGoalSelect() {
+        const select = document.getElementById('savingsGoalSelect');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Select goal...</option>';
+        savingsGoals.forEach(goal => {
+            const option = document.createElement('option');
+            option.value = goal.id;
+            option.textContent = goal.name;
+            select.appendChild(option);
         });
     }
 
@@ -370,16 +384,41 @@ document.addEventListener('DOMContentLoaded', function () {
             category: newEntryForm.entryCategory.value,
         };
 
-        // savings contribution capture
-        if (contributeSavings && contributeSavings.checked) {
-            data.contribution = {
-                enabled: true,
-                goalId: savingsGoalSelect?.value || null,
-                type: savingsContributionType?.value || 'all',
-                value: parseFloat(savingsContributionValue?.value || 0)
-            };
-        } else {
-            data.contribution = { enabled: false };
+        // Handle savings contribution if applicable
+        if (data.type === 'credit' && contributeSavings && contributeSavings.checked) {
+            const goalId = savingsGoalSelect?.value;
+            const contributionType = savingsContributionType?.value;
+            const contributionValue = parseFloat(savingsContributionValue?.value || 0);
+
+            if (goalId && contributionValue > 0) {
+                const goal = savingsGoals.find(g => g.id === parseInt(goalId));
+                if (goal) {
+                    let contributionAmount = 0;
+                    if (contributionType === 'percent') {
+                        contributionAmount = (data.amount * contributionValue) / 100;
+                    } else {
+                        contributionAmount = contributionValue;
+                    }
+
+                    // Add contribution to goal
+                    if (!goal.contributions) goal.contributions = [];
+                    goal.contributions.push({
+                        date: data.date,
+                        amount: contributionAmount,
+                        entryId: data.id
+                    });
+
+                    // Update total saved
+                    goal.currentAmount = (goal.currentAmount || 0) + contributionAmount;
+                    
+                    localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+                    
+                    data.savingsContribution = {
+                        goalId: goalId,
+                        amount: contributionAmount
+                    };
+                }
+            }
         }
 
         entries.push(data);
@@ -399,7 +438,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     amount: data.amount,
                     description: data.description,
                     category: data.category,
-                    contribution: data.contribution
                 }
             };
             recurringPlans.push(plan);
@@ -660,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderPlans() {
+        if (!plansList) return; // Exit if element doesn't exist
         plansList.innerHTML = '';
         if (!budgetPlans.length) {
             plansList.textContent = 'No saved plans.';
@@ -781,8 +820,117 @@ document.addEventListener('DOMContentLoaded', function () {
         recurrenceControls.style.display = 'none';
         savingsControls.style.display = 'none';
         populateEntryCategorySelect(); // <-- ensure categories reflect current-month plan
+        populateSavingsGoalSelect(); // populate savings goals
         newEntryOverlay.style.display = 'flex';
     });
+
+    // ===== SAVINGS GOALS PAGE FUNCTIONALITY =====
+    
+    const newGoalButton = document.getElementById('new-goal-button');
+    const newGoalOverlay = document.getElementById('newGoalOverlay');
+    const closeNewGoalBtn = document.getElementById('closeNewGoalBtn');
+    const newGoalForm = document.getElementById('newGoalForm');
+
+    function getIconForGoal(iconType) {
+        const icons = {
+            'piggy-bank': '💰',
+            'plane': '✈️',
+            'home': '🏠',
+            'car': '🚗',
+            'graduation': '🎓',
+            'ring': '💍',
+            'umbrella': '☂️'
+        };
+        return icons[iconType] || '💰';
+    }
+
+    function renderSavingsGoals() {
+        const container = document.getElementById('savings-goals-list');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (savingsGoals.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #666; margin: 2rem;">No savings goals yet. Click + New Goal to create one!</p>';
+            return;
+        }
+
+        savingsGoals.forEach(goal => {
+            const currentAmount = goal.currentAmount || 0;
+            const targetAmount = goal.targetAmount || 1;
+            const percentage = Math.min((currentAmount / targetAmount) * 100, 100);
+
+            const goalCard = document.createElement('button');
+            goalCard.className = 'rounded-rectangle';
+            goalCard.innerHTML = `
+                <div class="details">
+                    <p class="date">${getIconForGoal(goal.icon)}</p>
+                    <p class="charge-or-credit">${goal.name}</p>
+                    <p class="amount-plus">$${currentAmount.toFixed(2)}</p>
+                </div>
+                <div class="about">
+                    <p class="description"><strong>Target:</strong> $${targetAmount.toFixed(2)}</p>
+                    <p class="category"><strong>Progress:</strong> ${percentage.toFixed(0)}%</p>
+                </div>
+            `;
+            container.appendChild(goalCard);
+        });
+    }
+
+    if (newGoalButton) {
+        newGoalButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('New goal button clicked');
+            if (newGoalOverlay) {
+                console.log('Opening overlay');
+                newGoalOverlay.style.display = 'flex';
+            } else {
+                console.log('Overlay not found');
+            }
+        });
+    } else {
+        console.log('New goal button not found');
+    }
+
+    if (closeNewGoalBtn) {
+        closeNewGoalBtn.addEventListener('click', () => {
+            if (newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    if (newGoalOverlay) {
+        newGoalOverlay.addEventListener('click', (e) => {
+            if (e.target === newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    if (newGoalForm) {
+        newGoalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newGoal = {
+                id: Date.now(),
+                name: newGoalForm.goalName.value.trim(),
+                targetAmount: parseFloat(newGoalForm.goalTarget.value),
+                icon: newGoalForm.goalIcon.value,
+                currentAmount: 0,
+                contributions: []
+            };
+
+            savingsGoals.push(newGoal);
+            localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+
+            renderSavingsGoals();
+            populateSavingsGoalSelect();
+
+            newGoalForm.reset();
+            if (newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    // Initial render for savings page
+    renderSavingsGoals();
+    populateSavingsGoalSelect();
 
     // virtual keyboard :)
     (function () {
