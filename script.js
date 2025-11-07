@@ -809,7 +809,14 @@ document.addEventListener('DOMContentLoaded', function () {
             a.dataset.id = plan.id;
             const label = document.createElement('span');
             label.className = 'plan-month';
-            label.textContent = new Date(plan.month + '-01').toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
+            console.log(plan.month);
+            const [year, month] = plan.month.split("-");
+            const dia = new Date(year, month - 1, 1);
+            console.log(dia.toLocaleString(undefined, { month: "long", year: "numeric" }));
+            label.textContent = dia.toLocaleString(undefined, { month: "long", year: "numeric" });
+            // new Date(plan.month + '-01').toLocaleString("en-US", { month: 'long', year: 'numeric' });
+
             const icon = document.createElement('i');
             icon.className = 'fa-solid fa-pen-to-square';
             a.appendChild(label);
