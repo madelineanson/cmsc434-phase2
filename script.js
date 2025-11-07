@@ -1246,16 +1246,14 @@ document.addEventListener('DOMContentLoaded', function () {
             return results;
         }
 
-        function renderAllActivity(results, limit) {
+        function renderAllActivity(results) {
             if (!Array.isArray(results)) {
                 results = applyAllFilters(true);
             }
 
-            // on first load show top 5
-            const showing = (typeof limit === 'number') ? results.slice(0, limit) : results;
-
+            // render all matching results into the list; scrolling is handled by CSS
             listEl.innerHTML = '';
-            if (!showing.length) {
+            if (!results.length) {
                 const p = document.createElement('p');
                 p.style.textAlign = 'center';
                 p.style.color = '#666';
@@ -1263,18 +1261,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 p.textContent = 'No activity for selected filters.';
                 listEl.appendChild(p);
             } else {
-                showing.forEach(entry => {
+                results.forEach(entry => {
                     listEl.appendChild(createCardForEntry(entry));
                 });
             }
         }
 
-        // initial population: categories and show 5 most recent
-        // changing to 4!!
+        // initial population: categories and show 5 most recent -> now render all but CSS shows ~4 visible
         populateCategoryFilter();
-        // sort all entries by date descending and show first 5
         const initialSorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
-        renderAllActivity(initialSorted.slice(0,4), /* limit */ 5);
+        renderAllActivity(initialSorted); // <-- render all, CSS will show ~4 and allow scroll
 
         applyBtn.addEventListener('click', (e) => {
             e.preventDefault();
