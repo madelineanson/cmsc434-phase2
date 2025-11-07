@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const typeP = document.createElement('p');
                 typeP.className = 'charge-or-credit';
-                typeP.textContent = (entry.type === 'credit' ? 'Credit' : 'Charge');
+                typeP.textContent = (entry.type === 'credit' ? 'Income' : 'Charge');
 
                 const amountP = document.createElement('p');
                 amountP.className = (entry.type === 'credit' ? 'amount-plus' : 'amount-minus');
