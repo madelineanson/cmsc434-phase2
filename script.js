@@ -547,111 +547,114 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const chartCanvas = document.getElementById('budgetChart');
     if (chartCanvas) {
-        const ctx = chartCanvas.getContext('2d');
-        let chartInstance = null;
+    const ctx = chartCanvas.getContext('2d');
+    let chartInstance = null;
 
-        const timeRangeSelect = document.getElementById('timeRangeSelect');
-        const intervalCountInput = document.getElementById('intervalCount');
-        const budgetInput = document.getElementById('budgetInput');
-        const applyBtn = document.getElementById('applyStatsBtn');
-        const totalSpentEl = document.getElementById('totalSpent');
-        const budgetPerIntervalEl = document.getElementById('budgetPerInterval');
+    const timeRangeSelect = document.getElementById('timeRangeSelect');
+    const applyBtn = document.getElementById('applyStatsBtn');
+    const totalSpentEl = document.getElementById('totalSpent');
 
-        function getIntervalLabel(index, timeRange) {
-            if (timeRange === 'weekly') return `Week ${index + 1}`;
-            if (timeRange === 'monthly') return `Month ${index + 1}`;
-            if (timeRange === 'yearly') return `Year ${index + 1}`;
-            return `Interval ${index + 1}`;
-        }
+    let budgetPlans = JSON.parse(localStorage.getItem('budgetPlans')) || [];
 
-        const budgetLinePlugin = {
-            id: 'budgetLine',
-            afterDraw(chart) {
-                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
-                const budget = chart.config.options.plugins.budgetLine?.budgetValue;
-                if (budget === undefined) return;
-
-                const yPos = y.getPixelForValue(budget);
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(left, yPos);
-                ctx.lineTo(right, yPos);
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-                ctx.setLineDash([5, 5]);
-                ctx.stroke();
-                ctx.restore();
-            }
-        };
-
-        function updateChart() {
-            const timeRange = timeRangeSelect.value;
-            const intervals = parseInt(intervalCountInput.value);
-            const budget = parseFloat(budgetInput.value);
-            if (!entries.length) return;
-
-            const now = new Date();
-            let intervalLengthMs;
-            if (timeRange === 'weekly') intervalLengthMs = 7 * 24 * 60 * 60 * 1000;
-            else if (timeRange === 'monthly') intervalLengthMs = 30 * 24 * 60 * 60 * 1000;
-            else intervalLengthMs = 365 * 24 * 60 * 60 * 1000;
-
-            // sort by transaction date (newest top)
-            const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const latestDate = now;
-            const earliestDate = new Date(latestDate - intervalLengthMs * intervals);
-
-            const intervalSpending = Array(intervals).fill(0);
-            sorted.forEach(entry => {
-                const entryDate = new Date(entry.date);
-                if (entryDate >= earliestDate && entryDate <= latestDate && entry.type === 'debit') {
-                    const diff = latestDate - entryDate;
-                    const intervalIndex = Math.floor(diff / intervalLengthMs);
-                    if (intervalIndex < intervals) {
-                        intervalSpending[intervals - 1 - intervalIndex] += entry.amount;
-                    }
-                }
-            });
-
-            const labels = Array.from({ length: intervals }, (_, i) => getIntervalLabel(i, timeRange));
-            const data = intervalSpending.map(v => v);
-            const totalSpent = data.reduce((a, b) => a + b, 0);
-            totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
-            budgetPerIntervalEl.textContent = `$${budget.toFixed(2)}`;
-            const colors = data.map(v => (v <= budget ? 'rgba(0,150,0,0.7)' : 'rgba(200,0,0,0.7)'));
-            const dataset = { label: 'Spending', data, backgroundColor: colors, borderColor: colors, borderWidth: 1 };
-
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: { labels, datasets: [dataset] },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: budget * 2,
-                            grid: { color: '#ccc' },
-                            ticks: { stepSize: budget / 2 }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: true, text: 'Budget vs Spending Intervals' },
-                        budgetLine: { budgetValue: budget }
-                    }
-                },
-                plugins: [budgetLinePlugin]
-            });
-        }
-
-        applyBtn.addEventListener('click', updateChart);
-        updateChart();
+    function getMonthLabel(date) {
+        return date.toLocaleString(undefined, { month: 'short', year: '2-digit' });
     }
 
+    function getMonthKey(date) {
+        return date.toISOString().slice(0, 7); // YYYY-MM
+    }
+
+    const budgetLinePlugin = {
+        id: 'budgetLine',
+        afterDatasetsDraw(chart) {
+        const { ctx, scales: { y } } = chart;
+        const budgets = chart.config.options.plugins.budgetLine?.monthlyBudgets;
+        if (!budgets) return;
+    
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+    
+        ctx.save();
+        ctx.setLineDash([]);            // solid line
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+    
+        meta.data.forEach((bar, i) => {
+            const budgetVal = budgets[i];
+            if (!bar || !budgetVal || budgetVal <= 0) return;
+            const yPos = y.getPixelForValue(budgetVal);
+            const barLeft = bar.x - (bar.width / 2);
+            const barRight = bar.x + (bar.width / 2);
+
+            ctx.beginPath();
+            ctx.moveTo(barLeft, yPos);
+            ctx.lineTo(barRight, yPos);
+            ctx.stroke();
+        });
+        ctx.restore();
+        }
+    };
+    
+    function updateChart() {
+        const range = timeRangeSelect.value;
+        const now = new Date();
+        const monthsBack = range === '6months' ? 6 : 12;
+
+        const startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 1);
+        const monthlySpending = [];
+        const monthlyBudgets = [];
+        const labels = [];
+
+        for (let i = 0; i < monthsBack; i++) {
+        const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+        const key = getMonthKey(d);
+        labels.push(getMonthLabel(d));
+
+        const spent = entries
+            .filter(e => e.type === 'debit' && e.date.startsWith(key))
+            .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        monthlySpending.push(spent);
+
+        const plan = budgetPlans.find(p => p.month === key);
+        monthlyBudgets.push(plan ? Number(plan.total) || 0 : 0);
+        }
+
+        const totalSpent = monthlySpending.reduce((a, b) => a + b, 0);
+        totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
+
+        const avgBudget =
+        monthlyBudgets.filter(v => v > 0).reduce((a, b) => a + b, 0) /
+        (monthlyBudgets.filter(v => v > 0).length || 1);
+
+        const dataset = {
+        label: 'Spending',
+        data: monthlySpending,
+        backgroundColor: monthlySpending.map((v, i) =>
+            v <= monthlyBudgets[i] ? 'rgba(0,150,0,0.7)' : 'rgba(200,0,0,0.7)'
+        )
+        };
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [dataset] },
+        options: {
+            responsive: true,
+            scales: {
+            y: { beginAtZero: true, grid: { color: '#ccc' } }
+            },
+            plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Spending vs Budget' },
+            budgetLine: { monthlyBudgets }
+            }
+        },
+        plugins: [budgetLinePlugin]
+        });
+    }
+
+    applyBtn.addEventListener('click', updateChart);
+    updateChart();
+    }
     /*
         BUDGET PLANS POP UP 
     */

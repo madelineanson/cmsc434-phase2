@@ -19,21 +19,14 @@
             <h1>Stats</h1>
             <!--Stats stuff-->
             <div id="stats-controls" style="text-align:center; margin: 1rem;">
-                <label for="timeRangeSelect"><strong>Time Range:</strong></label>
+                <label for="timeRangeSelect"><strong>Range:</strong></label>
                 <select id="timeRangeSelect">
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly" selected>Monthly</option>
-                    <option value="yearly">Yearly</option>
+                  <option value="6months" selected>Past 6 Months</option>
+                  <option value="year">Past Year</option>
                 </select>
-
-                <label for="intervalCount"><strong>Intervals:</strong></label>
-                <input type="number" id="intervalCount" min="1" max="10" value="5" style="width: 60px;">
-
-                <label for="budgetInput"><strong>Budget ($):</strong></label>
-                <input type="number" id="budgetInput" value="1000" min="0" step="0.01" style="width: 100px;">
-
+              
                 <button id="applyStatsBtn">Apply</button>
-            </div>
+              </div>
 
             <div style="width:90%; max-width:600px; margin: 1rem auto;">
                 <canvas id="budgetChart" width="400" height="300"></canvas>
@@ -41,7 +34,6 @@
 
             <div id="stats-summary" style="text-align:center; margin-bottom: 2rem;">
                 <p>Total Spent: <strong id="totalSpent">$0.00</strong></p>
-                <p>Budget per Interval: <strong id="budgetPerInterval">$0.00</strong></p>
             </div>
 
             <div class="navbar">
