@@ -876,6 +876,11 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('All categories must have a name.');
             return;
         }
+        
+        if (budgetPlans.find(b => b.month === monthVal)) {
+            alert('Cannot make more than one budget plan per month.');
+            return;
+        }
 
         const sum = categories.reduce((s, c) => s + (isNaN(c.amount) ? 0 : c.amount), 0);
         if (Math.abs(sum - totalVal) > 0.009) {
