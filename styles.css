@@ -5,6 +5,10 @@ body {
 :root {
     font-family: Inter, sans-serif;
     font-feature-settings: 'liga' 1, 'calt' 1;
+    /* needed to make the scollbar work but ideally fixed in a bettre way later */
+    --header-height: 4.5rem;
+    --controls-height: 7.5rem;
+    --navbar-height: 4rem;
 }
 
 #app-logo {
@@ -861,7 +865,7 @@ body {
     border-radius: 6px;
     border: 1px solid #ccc;
     font-size: 0.95rem;
-    background: #fff;
+    background: whitesmoke;
 }
 
 .small-btn {
@@ -869,7 +873,7 @@ body {
     border-radius: 8px;
     border: none;
     background: #4B628B;
-    color: #fff;
+    color: whitesmoke;
     cursor: pointer;
     font-weight: 700;
 }
@@ -879,12 +883,11 @@ body {
 }
 
 #all-activity-list {
+    box-sizing: border-box;
     width: 100%;
     max-width: 1100px;
-    margin: 0 auto 0rem;
-    box-sizing: border-box;
-    padding-bottom: 0;
-    max-height: 28rem;
+    margin: 0.75rem auto 0;
+    padding: 0 1rem;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
