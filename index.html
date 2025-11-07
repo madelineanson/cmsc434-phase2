@@ -48,14 +48,11 @@
                             <div id="categoryRow">
                                 <label for="entryCategory">Category</label>
                                 <select id="entryCategory" name="entryCategory">
-                                    <option value="groceries">Groceries</option>
-                                    <option value="fun">Fun</option>
-                                    <option value="school">School</option>
-                                    <option value="rent">Rent</option>
+                                    <!-- dynamically populated -->
                                 </select>
                             </div>
 
-                            <!-- Income-only options (hidden for Charge) -->
+                            <!-- income-only options (hidden for charegs) -->
                             <div id="incomeOptions" style="display:none; margin-top:0.75rem;">
                                 <label><input type="checkbox" id="entryRecurring"> Recurring</label>
 
@@ -67,7 +64,6 @@
                                         <option value="monthly">Monthly</option>
                                         <option value="daily">Daily</option>
                                     </select>
-                                    <small style="display:block; color:#555;">New entries will be auto-created on load for due recurring items.</small>
                                 </div>
 
                                 <div style="margin-top:0.5rem;">
@@ -75,7 +71,7 @@
                                     <div id="savingsControls" style="display:none; margin-top:0.5rem;">
                                         <label for="savingsGoalSelect">Savings Goal</label>
                                         <select id="savingsGoalSelect">
-                                            <option value="">Select goal...</option>
+                                            <option value="">Select goal</option>
                                         </select>
                                         <label for="savingsContributionType">Contribution Type</label>
                                         <select id="savingsContributionType">
@@ -100,45 +96,7 @@
 
                 <button id="new-entry-button">+ Entry</button>
                 <h1 id="recent-activity-header">Recent Activity:</h1>
-                <div id="recent-activity">
-                    <button class="rounded-rectangle openPopupBtn">
-                        <div class="details">
-                            <p class="date">10/18/25</p>
-                            <p class="charge-or-credit">Charge</p>
-                            <p class="amount-minus">-$128.47</p>
-                        </div>
-                        <div class="about">
-                            <p class="description"><strong>Description:</strong> Bought Fuentes textbook for Spanish
-                                class</p>
-                            <p class="category"><strong>Category:</strong> School</p>
-                        </div>
-                    </button>
-
-                    <button class="rounded-rectangle openPopupBtn">
-                        <div class="details">
-                            <p class="date">10/9/25</p>
-                            <p class="charge-or-credit">Credit</p>
-                            <p class="amount-plus">+$128.47</p>
-                        </div>
-                        <div class="about">
-                            <p class="description"><strong>Description:</strong> Payday!</p>
-                            <p class="recurring">(Recurring Every 2 Weeks)</p>
-                        </div>
-                    </button>
-
-                    <button class="rounded-rectangle openPopupBtn">
-                        <div class="details">
-                            <p class="date">9/27/25</p>
-                            <p class="charge-or-credit">Charge</p>
-                            <p class="amount-minus">-$128.47</p>
-                        </div>
-                        <div class="about">
-                            <p class="description"><strong>Description:</strong> Mcdonald's</p>
-                            <p class="category"><strong>Category:</strong> Fun</p>
-                        </div>
-                    </button>
-                    <button id="all-activity-button" href="all_activity.html">All Activity</button>
-                </div>
+                <div id="recent-activity"></div>
             </div>
             <div class="navbar">
                 <a href="budget.html" class="nav-icon"><i class="fa-solid fa-chart-pie"></i><span class="nav-label">Budgets</span></a>
