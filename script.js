@@ -530,13 +530,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const currDay = new Date();
             const currYearMonth = getCurrMonthYr(currDay);
             const currPlan = budgetPlans.find(b => b.month === currYearMonth)
-            data = google.visualization.arrayToDataTable([
-                ['Category', 'Amount'],
-                ['Groceries', 300],
-                ['Fun', 120],
-                ['School', 220],
-                ['Rent', 800]
-            ]);
+            let data;
 
             // if there is a budget plan for the current month, use those categories. if not, keep default
             if (currPlan) {
@@ -545,7 +539,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     entryRows.push([elem.name, Number(elem.amount)])
                 })
                 data = google.visualization.arrayToDataTable(entryRows);
-            } 
+            } else {
+                data = google.visualization.arrayToDataTable([
+                    ['Category', 'Amount'],
+                    ['No budget plans for this month yet', 1]
+                ]);
+            }
 
             const options = {
                 backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
@@ -560,7 +559,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     bold: true
                 },
                 // later: implement so if the user selects a color close to white, the pieslicetextcolor is dark
-                tooltip: { trigger: 'hover', text: 'both' }
+                tooltip: { trigger: 'hover', text: 'both' },
+                slices: { 
+                    0: { color : '#A9A9A9'}}
             };
 
             const chart = new google.visualization.PieChart(document.getElementById('piechart'));
