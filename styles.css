@@ -889,26 +889,11 @@ body {
     margin: 0.75rem auto 0;
     padding: 0 1rem;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    padding-bottom: 5rem;
 }
 
-#all-activity-list::-webkit-scrollbar {
-    width: 10px;
-}
-
-#all-activity-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 8px;
-}
-
-#all-activity-list::-webkit-scrollbar-thumb {
-    background: rgba(75, 98, 139, 0.6);
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-}
-
-#all-activity-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(75, 98, 139, 0.8);
+#all-activity-list.rounded-rectangle:last-child {
+    margin-bottom: 1rem;
 }
 
 .budget-bar-subheading {
