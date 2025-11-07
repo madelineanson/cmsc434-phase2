@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     
         const categories = currPlan.categories.map(c => c.name);
-        const categoryBudgets = currPlan.categories.map(c => Number(c.amount));
+        const individualBudgets = currPlan.categories.map(c => Number(c.amount));
     
         const categorySpending = categories.map(cat => {
             return entries.filter(e =>
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     {
                         label: 'Budgeted',
                         backgroundColor: '#36A2EB',
-                        data: categoryBudgets
+                        data: individualBudgets
                     },
                     {
                         label: 'Spent',
