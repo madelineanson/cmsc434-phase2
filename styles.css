@@ -669,6 +669,9 @@ body {
     overflow-y: auto;
     padding-bottom: 8rem;
     margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 #savings-goals-list::-webkit-scrollbar {
@@ -689,7 +692,8 @@ body {
     background: #3A4A6E;
 }
 
-#newGoalOverlay {
+#newGoalOverlay,
+#updateGoalOverlay {
     display: none;
     position: fixed;
     z-index: 1100;
@@ -703,7 +707,8 @@ body {
     align-items: center;
 }
 
-#newGoalContent {
+#newGoalContent,
+#updateGoalContent {
     background-color: #F4FBFF;
     margin: auto;
     padding: 20px;
@@ -712,6 +717,86 @@ body {
     max-width: 480px;
     border-radius: 8px;
     text-align: left;
+}
+
+.goal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background-color: #F4FBFF;
+    border-radius: 18px;
+    border: 1px solid rgba(75, 98, 139, 0.2);
+    box-shadow: 4px 4px 6px rgba(75, 98, 139, 0.18);
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    outline: none;
+}
+
+.goal-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 6px 6px 10px rgba(75, 98, 139, 0.22);
+}
+
+.goal-item:focus-visible {
+    box-shadow: 0 0 0 4px rgba(75, 98, 139, 0.35);
+}
+
+.goal-item.complete {
+    background-color: #E5F6EA;
+    border-left: 6px solid #1B8917;
+}
+
+.goal-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.goal-icon {
+    font-size: 2.5rem;
+}
+
+.goal-info p {
+    margin: 0;
+    color: #303e58;
+}
+
+.goal-name {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.goal-progress {
+    font-size: 1.1rem;
+    color: #52648a;
+}
+
+.goal-status {
+    font-size: 1rem;
+    color: #1B8917;
+    font-weight: 600;
+}
+
+.delete-goal-btn {
+    background-color: #C52816;
+    color: #F4FBFF;
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 120ms ease;
+}
+
+.delete-goal-btn:hover {
+    background-color: #a32012;
+}
+
+.delete-goal-btn:focus-visible {
+    outline: 3px solid rgba(197, 40, 22, 0.5);
 }
 
 #imageKeyboard {

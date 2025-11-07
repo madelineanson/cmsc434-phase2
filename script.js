@@ -907,6 +907,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const newGoalOverlay = document.getElementById('newGoalOverlay');
     const closeNewGoalBtn = document.getElementById('closeNewGoalBtn');
     const newGoalForm = document.getElementById('newGoalForm');
+    const updateGoalOverlay = document.getElementById('updateGoalOverlay');
+    const closeUpdateGoalBtn = document.getElementById('closeUpdateGoalBtn');
+    const updateGoalForm = document.getElementById('updateGoalForm');
+    const updateGoalName = document.getElementById('updateGoalName');
+    const goalCurrentAmountInput = document.getElementById('goalCurrentAmount');
+
+    let activeGoalId = null;
 
     function getIconForGoal(iconType) {
         const icons = {
@@ -933,40 +940,123 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         savingsGoals.forEach(goal => {
-            const currentAmount = goal.currentAmount || 0;
-            const targetAmount = goal.targetAmount || 1;
-            const percentage = Math.min((currentAmount / targetAmount) * 100, 100);
+            const currentAmount = Number(goal.currentAmount) || 0;
+            const targetAmount = Number(goal.targetAmount) || 0;
+            const safeTarget = targetAmount > 0 ? targetAmount : 0;
+            const percentage = safeTarget > 0 ? Math.min((currentAmount / safeTarget) * 100, 100) : 0;
+            const isComplete = safeTarget > 0 && currentAmount >= safeTarget;
 
-            const goalCard = document.createElement('button');
-            goalCard.className = 'rounded-rectangle';
-            goalCard.innerHTML = `
-                <div class="details">
-                    <p class="date">${getIconForGoal(goal.icon)}</p>
-                    <p class="charge-or-credit">${goal.name}</p>
-                    <p class="amount-plus">$${currentAmount.toFixed(2)}</p>
-                </div>
-                <div class="about">
-                    <p class="description"><strong>Target:</strong> $${targetAmount.toFixed(2)}</p>
-                    <p class="category"><strong>Progress:</strong> ${percentage.toFixed(0)}%</p>
-                </div>
-            `;
-            container.appendChild(goalCard);
+            const goalItem = document.createElement('div');
+            goalItem.className = 'goal-item';
+            goalItem.dataset.goalId = goal.id;
+            goalItem.setAttribute('role', 'button');
+            goalItem.tabIndex = 0;
+
+            if (isComplete) {
+                goalItem.classList.add('complete');
+            }
+
+            const main = document.createElement('div');
+            main.className = 'goal-main';
+
+            const icon = document.createElement('div');
+            icon.className = 'goal-icon';
+            icon.textContent = getIconForGoal(goal.icon);
+
+            const info = document.createElement('div');
+            info.className = 'goal-info';
+
+            const nameEl = document.createElement('p');
+            nameEl.className = 'goal-name';
+            nameEl.textContent = goal.name;
+
+            const progressEl = document.createElement('p');
+            progressEl.className = 'goal-progress';
+            progressEl.textContent = `$${currentAmount.toFixed(2)} of $${safeTarget.toFixed(2)} (${percentage.toFixed(0)}%)`;
+
+            info.appendChild(nameEl);
+            info.appendChild(progressEl);
+
+            if (isComplete) {
+                const statusEl = document.createElement('p');
+                statusEl.className = 'goal-status';
+                statusEl.textContent = 'Completed';
+                info.appendChild(statusEl);
+            }
+
+            main.appendChild(icon);
+            main.appendChild(info);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'delete-goal-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.setAttribute('aria-label', `Delete ${goal.name}`);
+
+            deleteBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                const shouldDelete = confirm(`Delete goal "${goal.name}"?`);
+                if (!shouldDelete) return;
+                deleteGoal(goal.id);
+            });
+
+            goalItem.addEventListener('click', () => openUpdateGoal(goal));
+            goalItem.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openUpdateGoal(goal);
+                }
+            });
+
+            goalItem.appendChild(main);
+            goalItem.appendChild(deleteBtn);
+            container.appendChild(goalItem);
         });
+    }
+
+    function deleteGoal(goalId) {
+        const idToRemove = String(goalId);
+        savingsGoals = savingsGoals.filter(goal => String(goal.id) !== idToRemove);
+        localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+        renderSavingsGoals();
+        populateSavingsGoalSelect();
+        if (activeGoalId !== null && String(activeGoalId) === idToRemove) {
+            closeUpdateGoal();
+        }
+    }
+
+    function openUpdateGoal(goal) {
+        if (!updateGoalOverlay || !updateGoalForm || !goalCurrentAmountInput) return;
+        activeGoalId = String(goal.id);
+        updateGoalForm.dataset.goalId = String(goal.id);
+        goalCurrentAmountInput.value = (Number(goal.currentAmount) || 0).toFixed(2);
+        if (updateGoalName) {
+            updateGoalName.textContent = `${getIconForGoal(goal.icon)} ${goal.name}`;
+        }
+        updateGoalOverlay.style.display = 'flex';
+        setTimeout(() => goalCurrentAmountInput.focus(), 0);
+    }
+
+    function closeUpdateGoal() {
+        if (!updateGoalOverlay || !updateGoalForm || !goalCurrentAmountInput) return;
+        updateGoalOverlay.style.display = 'none';
+        updateGoalForm.dataset.goalId = '';
+        goalCurrentAmountInput.value = '';
+        activeGoalId = null;
     }
 
     if (newGoalButton) {
         newGoalButton.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('New goal button clicked');
             if (newGoalOverlay) {
-                console.log('Opening overlay');
                 newGoalOverlay.style.display = 'flex';
-            } else {
-                console.log('Overlay not found');
+                const nameField = newGoalForm?.goalName;
+                if (nameField) {
+                    setTimeout(() => nameField.focus(), 0);
+                }
             }
         });
-    } else {
-        console.log('New goal button not found');
     }
 
     if (closeNewGoalBtn) {
@@ -978,6 +1068,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (newGoalOverlay) {
         newGoalOverlay.addEventListener('click', (e) => {
             if (e.target === newGoalOverlay) newGoalOverlay.style.display = 'none';
+        });
+    }
+
+    if (updateGoalOverlay) {
+        updateGoalOverlay.addEventListener('click', (e) => {
+            if (e.target === updateGoalOverlay) {
+                closeUpdateGoal();
+            }
         });
     }
 
@@ -1004,6 +1102,45 @@ document.addEventListener('DOMContentLoaded', function () {
             if (newGoalOverlay) newGoalOverlay.style.display = 'none';
         });
     }
+
+    if (updateGoalForm) {
+        updateGoalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const goalId = updateGoalForm.dataset.goalId;
+            if (!goalId) return;
+
+            let newAmount = parseFloat(goalCurrentAmountInput?.value || '0');
+            if (!Number.isFinite(newAmount) || newAmount < 0) {
+                newAmount = 0;
+            }
+
+            const idToUpdate = String(goalId);
+            savingsGoals = savingsGoals.map(goal => {
+                if (String(goal.id) === idToUpdate) {
+                    return {
+                        ...goal,
+                        currentAmount: newAmount
+                    };
+                }
+                return goal;
+            });
+
+            localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+            renderSavingsGoals();
+            populateSavingsGoalSelect();
+            closeUpdateGoal();
+        });
+    }
+
+    if (closeUpdateGoalBtn) {
+        closeUpdateGoalBtn.addEventListener('click', closeUpdateGoal);
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && updateGoalOverlay && updateGoalOverlay.style.display === 'flex') {
+            closeUpdateGoal();
+        }
+    });
 
     renderSavingsGoals();
     populateSavingsGoalSelect();
