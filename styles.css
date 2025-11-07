@@ -5,6 +5,10 @@ body {
 :root {
     font-family: Inter, sans-serif;
     font-feature-settings: 'liga' 1, 'calt' 1;
+    /* needed to make the scollbar work but ideally fixed in a bettre way later */
+    --header-height: 4.5rem;
+    --controls-height: 7.5rem;
+    --navbar-height: 4rem;
 }
 
 #app-logo {
@@ -879,31 +883,18 @@ body {
 }
 
 #all-activity-list {
+    box-sizing: border-box;
     width: 100%;
     max-width: 1100px;
-    margin: 0 auto 0rem;
-    box-sizing: border-box;
-    padding-bottom: 0;
-    max-height: 28rem;
+    margin: 0.75rem auto 0;
+    padding: 0 1rem;
+    max-height: calc(100vh - (var(--header-height) + var(--controls-height) + var(--navbar-height)));
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(var(--navbar-height) + env(safe-area-inset-bottom, 0px) + 1rem);
 }
 
-#all-activity-list::-webkit-scrollbar {
-    width: 10px;
+#all-activity-list .rounded-rectangle:last-child {
+    margin-bottom: 1rem;
 }
 
-#all-activity-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 8px;
-}
-
-#all-activity-list::-webkit-scrollbar-thumb {
-    background: rgba(75, 98, 139, 0.6);
-    border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-}
-
-#all-activity-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(75, 98, 139, 0.8);
-}
+/* there are 2 scoll bars but for now it allows everything to be seen so we can return to this later */
