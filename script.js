@@ -529,8 +529,10 @@ document.addEventListener('DOMContentLoaded', function () {
         function drawPie() {
             const currDay = new Date();
             const currYearMonth = getCurrMonthYr(currDay);
+            const budgetPlans = normalizeStoredPlans();
             const currPlan = budgetPlans.find(b => b.month === currYearMonth)
             let data;
+            let options;
 
             // if there is a budget plan for the current month, use those categories. if not, keep default
             if (currPlan) {
@@ -539,30 +541,40 @@ document.addEventListener('DOMContentLoaded', function () {
                     entryRows.push([elem.name, Number(elem.amount)])
                 })
                 data = google.visualization.arrayToDataTable(entryRows);
+                options = {
+                    backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
+                    chartArea: { left: '5%', top: '5%', width: '90%', height: '90%' },
+                    legend: { position: 'none' },
+                    pieHole: 0,
+                    pieSliceText: 'label',
+                    pieSliceTextStyle: {
+                        fontSize: 18,
+                        color: '#ffffff',
+                        bold: true
+                    },
+                    tooltip: { trigger: 'hover', text: 'both' },
+                };
             } else {
                 data = google.visualization.arrayToDataTable([
                     ['Category', 'Amount'],
-                    ['No budget plans for this month yet', 1]
+                    ['No budget plan for this month yet', 1]
                 ]);
+                options = {
+                    backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
+                    chartArea: { left: '5%', top: '5%', width: '90%', height: '90%' },
+                    legend: { position: 'none' },
+                    pieHole: 0,
+                    pieSliceText: 'label',
+                    pieSliceTextStyle: {
+                        fontSize: 18,
+                        color: '#ffffff',
+                        bold: true
+                    },
+                    tooltip: { trigger: 'hover', text: 'both' },
+                    slices: { 
+                        0: { color : '#A9A9A9'}}
+                };
             }
-
-            const options = {
-                backgroundColor: { fill: '#D0E8F5', stroke: '#D0E8F5', strokeWidth: 0 },
-                chartArea: { left: '5%', top: '5%', width: '90%', height: '90%' },
-                legend: { position: 'none' },
-                pieHole: 0,
-                //   pieSliceText: 'percentage',
-                pieSliceText: 'label',
-                pieSliceTextStyle: {
-                    fontSize: 18,
-                    color: '#ffffff',
-                    bold: true
-                },
-                // later: implement so if the user selects a color close to white, the pieslicetextcolor is dark
-                tooltip: { trigger: 'hover', text: 'both' },
-                slices: { 
-                    0: { color : '#A9A9A9'}}
-            };
 
             const chart = new google.visualization.PieChart(document.getElementById('piechart'));
             chart.draw(data, options);
@@ -572,6 +584,88 @@ document.addEventListener('DOMContentLoaded', function () {
             if (google.visualization && google.visualization.events) drawPie();
         });
     }
+
+    if (document.getElementById('budget-bar-graph')) {
+        const canvas = document.getElementById('budget-bar-graph');
+        const ctx = canvas.getContext('2d');
+    
+        const month = getCurrentMonthKey();
+        const budgetPlans = normalizeStoredPlans();
+        const currPlan = budgetPlans.find(p => p.month === month);
+
+        // if there is no plan, show a grey square with the text "No budget plan for this month yet"
+        if (!currPlan) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['No budget plan for this month'],
+                    datasets: [{
+                        label: 'No data available',
+                        backgroundColor: '#A9A9A9',
+                        data: [1]
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'No budget plan for this month yet'
+                    },
+                    legend: { display : false }
+                }
+            });
+            return;
+        }
+    
+        const categories = currPlan.categories.map(c => c.name);
+        const categoryBudgets = currPlan.categories.map(c => Number(c.amount));
+    
+        const categorySpending = categories.map(cat => {
+            return entries.filter(e =>
+                e.type === 'debit' && 
+                e.category.toLowerCase().replace(/\s+/g, '-') === cat.toLowerCase().replace(/\s+/g, '-')
+                && e.date.startsWith(month))
+                .reduce((sum, e) => sum + Number(e.amount), 0);
+        })
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: categories,
+                datasets: [
+                    {
+                        label: 'Budgeted',
+                        backgroundColor: '#36A2EB',
+                        data: categoryBudgets
+                    },
+                    {
+                        label: 'Spent',
+                        backgroundColor: '#FF6384',
+                        data: categorySpending
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {position: 'top'},
+                    title: {
+                        display: true,
+                        text: `Budgeted amount vs. amount spent so far for ${getCurrMonthYr(new Date())}`
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {display: true, text: 'Amount in dollars'}
+                    }
+                }
+            }
+        });
+    }
+
+    /*
+    * BEGIN STATS PAGE FUNCTIONALITY
+    */
 
     const chartCanvas = document.getElementById('budgetChart');
     if (chartCanvas) {
@@ -589,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function getMonthKey(date) {
-        return date.toISOString().slice(0, 7); // YYYY-MM
+        return date.toISOString().slice(0, 7); 
     }
 
     const budgetLinePlugin = {
@@ -683,6 +777,7 @@ document.addEventListener('DOMContentLoaded', function () {
     applyBtn.addEventListener('click', updateChart);
     updateChart();
     }
+
     /*
         BUDGET PLANS POP UP 
     */
@@ -797,6 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderPlans() {
         if (!plansList) return;
+        const budgetPlans = normalizeStoredPlans();
         plansList.innerHTML = '';
         if (!budgetPlans.length) {
             plansList.textContent = 'No saved plans.';
@@ -810,10 +906,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = document.createElement('span');
             label.className = 'plan-month';
 
-            console.log(plan.month);
+            // console.log(plan.month);
             const [year, month] = plan.month.split("-");
             const dia = new Date(year, month - 1, 1);
-            console.log(dia.toLocaleString(undefined, { month: "long", year: "numeric" }));
+            // console.log(dia.toLocaleString(undefined, { month: "long", year: "numeric" }));
             label.textContent = dia.toLocaleString(undefined, { month: "long", year: "numeric" });
             // new Date(plan.month + '-01').toLocaleString("en-US", { month: 'long', year: 'numeric' });
 

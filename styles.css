@@ -907,3 +907,19 @@ body {
 #all-activity-list::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 98, 139, 0.8);
 }
+
+.budget-bar-subheading {
+    margin-left: 5%;
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    color: #303e58;
+    padding: 0;
+    padding-top: 0.4rem;
+    margin: 0;
+}
+
+#budget-screen {
+    overflow-y: auto;
+    max-height: 90vh;
+}
