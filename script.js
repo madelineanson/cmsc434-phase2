@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function populateSavingsGoalSelect() {
         const select = document.getElementById('savingsGoalSelect');
         if (!select) return;
-        
+
         select.innerHTML = '<option value="">Select goal...</option>';
         savingsGoals.forEach(goal => {
             const option = document.createElement('option');
@@ -113,11 +113,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // savings contribution info in the full deatils popup
         let contribText = '';
+        function goalNameById(id) {
+            const g = (savingsGoals || []).find(go => go.id == id);
+            return g ? (g.name || g.title || `Goal ${id}`) : `Goal ${id}`;
+        }
+        const goalId = entry.contribution.goalId;
+        const goalName = goalNameById(goalId);
         if (entry.savingsContribution) {
-            contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)} to goal ${entry.savingsContribution.goalId || ''}`;
+            contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)} to goal ${goalName || ''}`;
         } else if (entry.contribution && entry.contribution.enabled) {
             const v = entry.contribution.value || 0;
-            contribText = entry.contribution.type === 'all' ? `Contributed all to goal ${entry.contribution.goalId || ''}` : `Contributed ${v}${entry.contribution.type === 'percent' ? '%' : ''} to goal ${entry.contribution.goalId || ''}`;
+            contribText = entry.contribution.type === 'all' ? `Contributed all to goal ${entry.contribution.goalId || ''}` : `Contributed ${entry.contribution.type === 'percent' ? v + '%' : '$' + v} to goal "${goalName || ''}"`;
         }
 
         // prepare category / recurring display
@@ -177,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="number" id="editEntryAmount" name="editEntryAmount" step="0.01" min="0" value="${Number(entry.amount || 0).toFixed(2)}" required>
 
                 <label for="editEntryDescription">Description</label>
-                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description || '').replace(/"/g,'&quot;')}">
+                <input type="text" id="editEntryDescription" name="editEntryDescription" maxlength="200" value="${(entry.description || '').replace(/"/g, '&quot;')}">
 
                 <div id="editCategoryRow">
                     <label for="editEntryCategory">Category</label>
@@ -493,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const freq = recurrenceFrequency.value || 'monthly';
             const nextDate = advanceDateByFrequency(data.date, freq);
             const plan = {
-                id: Date.now() + Math.floor(Math.random()*1000),
+                id: Date.now() + Math.floor(Math.random() * 1000),
                 frequency: freq,
                 nextDate: nextDate,
                 templateEntry: {
@@ -560,8 +566,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 // later: implement so if the user selects a color close to white, the pieslicetextcolor is dark
                 tooltip: { trigger: 'hover', text: 'both' },
-                slices: { 
-                    0: { color : '#A9A9A9'}}
+                slices: {
+                    0: { color: '#A9A9A9' }
+                }
             };
 
             const chart = new google.visualization.PieChart(document.getElementById('piechart'));
@@ -575,113 +582,113 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const chartCanvas = document.getElementById('budgetChart');
     if (chartCanvas) {
-    const ctx = chartCanvas.getContext('2d');
-    let chartInstance = null;
+        const ctx = chartCanvas.getContext('2d');
+        let chartInstance = null;
 
-    const timeRangeSelect = document.getElementById('timeRangeSelect');
-    const applyBtn = document.getElementById('applyStatsBtn');
-    const totalSpentEl = document.getElementById('totalSpent');
+        const timeRangeSelect = document.getElementById('timeRangeSelect');
+        const applyBtn = document.getElementById('applyStatsBtn');
+        const totalSpentEl = document.getElementById('totalSpent');
 
-    let budgetPlans = JSON.parse(localStorage.getItem('budgetPlans')) || [];
+        let budgetPlans = JSON.parse(localStorage.getItem('budgetPlans')) || [];
 
-    function getMonthLabel(date) {
-        return date.toLocaleString(undefined, { month: 'short', year: '2-digit' });
-    }
-
-    function getMonthKey(date) {
-        return date.toISOString().slice(0, 7); // YYYY-MM
-    }
-
-    const budgetLinePlugin = {
-        id: 'budgetLine',
-        afterDatasetsDraw(chart) {
-        const { ctx, scales: { y } } = chart;
-        const budgets = chart.config.options.plugins.budgetLine?.monthlyBudgets;
-        if (!budgets) return;
-    
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data) return;
-    
-        ctx.save();
-        ctx.setLineDash([]);            // solid line
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-    
-        meta.data.forEach((bar, i) => {
-            const budgetVal = budgets[i];
-            if (!bar || !budgetVal || budgetVal <= 0) return;
-            const yPos = y.getPixelForValue(budgetVal);
-            const barLeft = bar.x - (bar.width / 2);
-            const barRight = bar.x + (bar.width / 2);
-
-            ctx.beginPath();
-            ctx.moveTo(barLeft, yPos);
-            ctx.lineTo(barRight, yPos);
-            ctx.stroke();
-        });
-        ctx.restore();
-        }
-    };
-    
-    function updateChart() {
-        const range = timeRangeSelect.value;
-        const now = new Date();
-        const monthsBack = range === '6months' ? 6 : 12;
-
-        const startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 1);
-        const monthlySpending = [];
-        const monthlyBudgets = [];
-        const labels = [];
-
-        for (let i = 0; i < monthsBack; i++) {
-        const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-        const key = getMonthKey(d);
-        labels.push(getMonthLabel(d));
-
-        const spent = entries
-            .filter(e => e.type === 'debit' && e.date.startsWith(key))
-            .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-        monthlySpending.push(spent);
-
-        const plan = budgetPlans.find(p => p.month === key);
-        monthlyBudgets.push(plan ? Number(plan.total) || 0 : 0);
+        function getMonthLabel(date) {
+            return date.toLocaleString(undefined, { month: 'short', year: '2-digit' });
         }
 
-        const totalSpent = monthlySpending.reduce((a, b) => a + b, 0);
-        totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
+        function getMonthKey(date) {
+            return date.toISOString().slice(0, 7); // YYYY-MM
+        }
 
-        const avgBudget =
-        monthlyBudgets.filter(v => v > 0).reduce((a, b) => a + b, 0) /
-        (monthlyBudgets.filter(v => v > 0).length || 1);
+        const budgetLinePlugin = {
+            id: 'budgetLine',
+            afterDatasetsDraw(chart) {
+                const { ctx, scales: { y } } = chart;
+                const budgets = chart.config.options.plugins.budgetLine?.monthlyBudgets;
+                if (!budgets) return;
 
-        const dataset = {
-        label: 'Spending',
-        data: monthlySpending,
-        backgroundColor: monthlySpending.map((v, i) =>
-            v <= monthlyBudgets[i] ? 'rgba(0,150,0,0.7)' : 'rgba(200,0,0,0.7)'
-        )
-        };
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [dataset] },
-        options: {
-            responsive: true,
-            scales: {
-            y: { beginAtZero: true, grid: { color: '#ccc' } }
-            },
-            plugins: {
-            legend: { display: false },
-            title: { display: true, text: 'Spending vs Budget' },
-            budgetLine: { monthlyBudgets }
+                const meta = chart.getDatasetMeta(0);
+                if (!meta || !meta.data) return;
+
+                ctx.save();
+                ctx.setLineDash([]);            // solid line
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+
+                meta.data.forEach((bar, i) => {
+                    const budgetVal = budgets[i];
+                    if (!bar || !budgetVal || budgetVal <= 0) return;
+                    const yPos = y.getPixelForValue(budgetVal);
+                    const barLeft = bar.x - (bar.width / 2);
+                    const barRight = bar.x + (bar.width / 2);
+
+                    ctx.beginPath();
+                    ctx.moveTo(barLeft, yPos);
+                    ctx.lineTo(barRight, yPos);
+                    ctx.stroke();
+                });
+                ctx.restore();
             }
-        },
-        plugins: [budgetLinePlugin]
-        });
-    }
+        };
 
-    applyBtn.addEventListener('click', updateChart);
-    updateChart();
+        function updateChart() {
+            const range = timeRangeSelect.value;
+            const now = new Date();
+            const monthsBack = range === '6months' ? 6 : 12;
+
+            const startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 1);
+            const monthlySpending = [];
+            const monthlyBudgets = [];
+            const labels = [];
+
+            for (let i = 0; i < monthsBack; i++) {
+                const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+                const key = getMonthKey(d);
+                labels.push(getMonthLabel(d));
+
+                const spent = entries
+                    .filter(e => e.type === 'debit' && e.date.startsWith(key))
+                    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+                monthlySpending.push(spent);
+
+                const plan = budgetPlans.find(p => p.month === key);
+                monthlyBudgets.push(plan ? Number(plan.total) || 0 : 0);
+            }
+
+            const totalSpent = monthlySpending.reduce((a, b) => a + b, 0);
+            totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
+
+            const avgBudget =
+                monthlyBudgets.filter(v => v > 0).reduce((a, b) => a + b, 0) /
+                (monthlyBudgets.filter(v => v > 0).length || 1);
+
+            const dataset = {
+                label: 'Spending',
+                data: monthlySpending,
+                backgroundColor: monthlySpending.map((v, i) =>
+                    v <= monthlyBudgets[i] ? 'rgba(0,150,0,0.7)' : 'rgba(200,0,0,0.7)'
+                )
+            };
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [dataset] },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#ccc' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Spending vs Budget' },
+                        budgetLine: { monthlyBudgets }
+                    }
+                },
+                plugins: [budgetLinePlugin]
+            });
+        }
+
+        applyBtn.addEventListener('click', updateChart);
+        updateChart();
     }
     /*
         BUDGET PLANS POP UP 
@@ -711,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function getCurrMonthYr(date) {
         document.querySelector('.budget-header').innerHTML = date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
         const year = date.getFullYear();
-        const month = date.getMonth() + 1; 
+        const month = date.getMonth() + 1;
         return `${year}-${month.toString()}`;
     }
 
@@ -883,7 +890,7 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('All categories must have a name.');
             return;
         }
-        
+
         if (budgetPlans.find(b => b.month === monthVal)) {
             alert('Cannot make more than one budget plan per month.');
             return;
@@ -916,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // SAVINGS GOALLLLS here!
-    
+
     const newGoalButton = document.getElementById('new-goal-button');
     const newGoalOverlay = document.getElementById('newGoalOverlay');
     const closeNewGoalBtn = document.getElementById('closeNewGoalBtn');
@@ -1010,8 +1017,6 @@ document.addEventListener('DOMContentLoaded', function () {
             deleteBtn.addEventListener('click', (event) => {
                 event.stopPropagation();
                 event.preventDefault();
-                const shouldDelete = confirm(`Delete goal "${goal.name}"?`);
-                if (!shouldDelete) return;
                 deleteGoal(goal.id);
             });
 
@@ -1377,7 +1382,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (toVal) {
                 const toDate = new Date(toVal);
-                toDate.setHours(23,59,59,999);
+                toDate.setHours(23, 59, 59, 999);
                 results = results.filter(r => new Date(r.date) <= toDate);
             }
 
@@ -1388,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (descVal) results = results.filter(r => (r.description || '').toLowerCase().includes(descVal));
 
             // sort
-            results.sort((a,b) => {
+            results.sort((a, b) => {
                 if (sortVal === 'most-recent') return new Date(b.date) - new Date(a.date);
                 if (sortVal === 'least-recent') return new Date(a.date) - new Date(b.date);
                 if (sortVal === 'highest-amount') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
@@ -1423,7 +1428,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // initial population: categories and show 5 most recent -> now render all but CSS shows ~4 visible
         populateCategoryFilter();
-        const initialSorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+        const initialSorted = (entries || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
         renderAllActivity(initialSorted); // <-- render all, CSS will show ~4 and allow scroll
 
         applyBtn.addEventListener('click', (e) => {
@@ -1442,8 +1447,8 @@ document.addEventListener('DOMContentLoaded', function () {
             filterSort.value = 'most-recent';
             populateCategoryFilter();
             // top 5
-            const sorted = (entries || []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
-            renderAllActivity(sorted.slice(0,5), 5);
+            const sorted = (entries || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+            renderAllActivity(sorted.slice(0, 5), 5);
         });
 
         // update category list if entries change (observe LS changes)
