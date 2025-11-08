@@ -699,11 +699,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const individualBudgets = currPlan.categories.map(c => Number(c.amount));
 
         const categorySpending = categories.map(cat => {
-            return entries.filter(e =>
-                e.type === 'debit' &&
-                e.category.toLowerCase().replace(/\s+/g, '-') === cat.toLowerCase().replace(/\s+/g, '-')
+            // pairs charges with the budgets of the categories the charges fall under 
+            charge = entries.filter(e => e.type === 'debit' &&
+                e.category.toLowerCase() === cat.toLowerCase()
                 && e.date.startsWith(month))
-                .reduce((sum, e) => sum + Number(e.amount), 0);
+            // "adds" the charge to the amount budgeted (adding because the charges are already stored as a negative amount) 
+            return charge.reduce((sum, e) => sum + e.amount, 0);
         })
 
         new Chart(ctx, {
