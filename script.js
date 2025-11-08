@@ -77,6 +77,69 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function calculateContributionAmount(entry) {
+        const entryAmount = Number(entry?.amount) || 0;
+        const contribution = entry?.contribution;
+        if (!contribution || !contribution.enabled || !entryAmount) return 0;
+
+        const type = contribution.type || 'all';
+        const rawValue = Number(contribution.value) || 0;
+        if (type === 'percent') {
+            if (rawValue <= 0) return 0;
+            return Math.min((entryAmount * rawValue) / 100, entryAmount);
+        }
+        if (type === 'fixed') {
+            return rawValue > 0 ? Math.min(rawValue, entryAmount) : 0;
+        }
+        return entryAmount;
+    }
+
+    function applyContributionToGoal(entry) {
+        if (!entry || entry.type !== 'credit') return;
+        const contribution = entry.contribution;
+        if (!contribution || !contribution.enabled) return;
+
+        const goalId = contribution.goalId;
+        if (!goalId) return;
+
+        const goalIndex = savingsGoals.findIndex(goal => String(goal.id) === String(goalId));
+        if (goalIndex === -1) return;
+
+        const amount = calculateContributionAmount(entry);
+        if (amount <= 0) return;
+
+        const goal = savingsGoals[goalIndex];
+        const currentAmount = Number(goal.currentAmount) || 0;
+        const targetAmount = Number(goal.targetAmount) || 0;
+        let appliedAmount = amount;
+        if (targetAmount > 0) {
+            const remaining = Math.max(0, targetAmount - currentAmount);
+            if (remaining <= 0) return;
+            appliedAmount = Math.min(appliedAmount, remaining);
+        }
+        if (appliedAmount <= 0) return;
+
+        const nextAmount = currentAmount + appliedAmount;
+        const contributionsHistory = Array.isArray(goal.contributions) ? goal.contributions.slice() : [];
+        contributionsHistory.push({ entryId: entry.id, amount: appliedAmount, date: entry.date });
+
+        savingsGoals[goalIndex] = {
+            ...goal,
+            currentAmount: nextAmount,
+            contributions: contributionsHistory
+        };
+
+        entry.savingsContribution = {
+            amount: appliedAmount,
+            goalId: goalId,
+            date: entry.date
+        };
+
+        localStorage.setItem('savingsGoals', JSON.stringify(savingsGoals));
+        renderSavingsGoals();
+        populateSavingsGoalSelect();
+    }
+
     // existing detail popup
     const closePopupBtn = document.getElementById('closePopupBtn');
     const popupOverlay = document.getElementById('popupOverlay');
@@ -400,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ent.id = Date.now() + Math.floor(Math.random() * 1000);
                 ent.date = plan.nextDate;
                 ent.recurringId = plan.id;
+                applyContributionToGoal(ent);
                 entries.push(ent);
                 // advance nextDate
                 plan.nextDate = advanceDateByFrequency(plan.nextDate, plan.frequency);
@@ -432,8 +496,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const contributeSavings = document.getElementById('contributeSavings');
     const savingsControls = document.getElementById('savingsControls');
     const savingsGoalSelect = document.getElementById('savingsGoalSelect');
-    const savingsContributionType = document.getElementById('savingsContributionType');
-    const savingsContributionValue = document.getElementById('savingsContributionValue');
 
     if (entryDate) {
         entryDate.value = new Date().toISOString().slice(0, 10);
@@ -496,8 +558,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data.contribution = {
                 enabled: true,
                 goalId: savingsGoalSelect?.value || null,
-                type: savingsContributionType?.value || 'all',
-                value: parseFloat(savingsContributionValue?.value || 0)
+                type: 'all'
             };
         } else {
             data.contribution = { enabled: false };
@@ -531,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data.recurring = createdPlan.frequency;
         }
 
+        applyContributionToGoal(data);
         entries.push(data);
         localStorage.setItem('financeEntries', JSON.stringify(entries));
 
