@@ -727,10 +727,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 responsive: true,
                 plugins: {
                     legend: { position: 'top' },
-                    title: {
-                        display: true,
-                        text: `Budgeted amount vs. amount spent so far for ${getCurrMonthYr(new Date())}`
-                    }
                 },
                 scales: {
                     y: {
