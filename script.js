@@ -812,8 +812,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
                 monthlySpending.push(spent);
 
-                const plan = budgetPlans.find(p => p.month === key);
-                monthlyBudgets.push(plan ? Number(plan.total) || 0 : 0);
+                const testBudgets = {
+                    "2024-12": 90,
+                    "2025-01": 115,
+                    "2025-02": 100,
+                    "2025-03": 130,
+                    "2025-04": 145,
+                    "2025-05": 125,
+                    "2025-06": 140,
+                    "2025-07": 75,
+                    "2025-08": 85,
+                    "2025-09": 150,
+                    "2025-10": 135,
+                    "2025-11": 120
+                  };
+                  
+                  const plan = budgetPlans.find(p => p.month === key);
+                  let budgetVal = plan ? Number(plan.total) || 0 : 0;
+                  
+                  if (!budgetVal && testBudgets[key]) {
+                    budgetVal = testBudgets[key];
+                  }
+                  
+                  monthlyBudgets.push(budgetVal);
             }
 
             const totalSpent = monthlySpending.reduce((a, b) => a + b, 0);
@@ -873,6 +894,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let budgetPlans = JSON.parse(localStorage.getItem('budgetPlans')) || [];
     let editingPlanId = null; // null => creating new
+    renderPlans();
 
     function formatMonthLabel(date) {
         return date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
