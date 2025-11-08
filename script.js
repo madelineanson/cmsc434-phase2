@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function getCurrMonthYr(date) {
-        document.querySelector('.budget-header').innerHTML = date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+        //document.querySelector('.budget-header').innerHTML = date.toLocaleString(undefined, { month: 'long', year: 'numeric' });
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         return `${year}-${month.toString()}`;
