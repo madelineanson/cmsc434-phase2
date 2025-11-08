@@ -117,13 +117,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const g = (savingsGoals || []).find(go => go.id == id);
             return g ? (g.name || g.title || `Goal ${id}`) : `Goal ${id}`;
         }
-        const goalId = entry.contribution.goalId;
-        const goalName = goalNameById(goalId);
+        // only read goalId if contribution or savingsContribution exist
+        const goalIdFromSavings = entry.savingsContribution?.goalId ?? null;
+        const goalIdFromContribution = entry.contribution?.goalId ?? null;
+        const resolvedGoalId = goalIdFromSavings ?? goalIdFromContribution;
+        const goalName = resolvedGoalId != null ? goalNameById(resolvedGoalId) : '';
         if (entry.savingsContribution) {
-            contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)} to goal ${goalName || ''}`;
+            contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)}${goalName ? ` to ${goalName}` : ''}`;
         } else if (entry.contribution && entry.contribution.enabled) {
-            const v = entry.contribution.value || 0;
-            contribText = entry.contribution.type === 'all' ? `Contributed all to goal ${entry.contribution.goalId || ''}` : `Contributed ${entry.contribution.type === 'percent' ? v + '%' : '$' + v} to goal "${goalName || ''}"`;
+            if (entry.contribution.type === 'all') {
+                contribText = goalName ? `Contributed all to ${goalName}` : 'Contributed all to goal';
+            } else {
+                contribText = `Contributed ${entry.contribution.type === 'percent' ? v + '%' : '$' + v}${goalName ? ` to ${goalName}` : ' to goal'}`;
+            }
         }
 
         // prepare category / recurring display
@@ -577,8 +583,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         bold: true
                     },
                     tooltip: { trigger: 'hover', text: 'both' },
-                    slices: { 
-                        0: { color : '#A9A9A9'}}
+                    slices: {
+                        0: { color: '#A9A9A9' }
+                    }
                 };
             }
 
@@ -594,7 +601,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('budget-bar-graph')) {
         const canvas = document.getElementById('budget-bar-graph');
         const ctx = canvas.getContext('2d');
-    
+
         const month = getCurrentMonthKey();
         const budgetPlans = normalizeStoredPlans();
         const currPlan = budgetPlans.find(p => p.month === month);
@@ -616,18 +623,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         display: true,
                         text: 'No budget plan for this month yet'
                     },
-                    legend: { display : false }
+                    legend: { display: false }
                 }
             });
             return;
         }
-    
+
         const categories = currPlan.categories.map(c => c.name);
         const individualBudgets = currPlan.categories.map(c => Number(c.amount));
-    
+
         const categorySpending = categories.map(cat => {
             return entries.filter(e =>
-                e.type === 'debit' && 
+                e.type === 'debit' &&
                 e.category.toLowerCase().replace(/\s+/g, '-') === cat.toLowerCase().replace(/\s+/g, '-')
                 && e.date.startsWith(month))
                 .reduce((sum, e) => sum + Number(e.amount), 0);
@@ -653,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 plugins: {
-                    legend: {position: 'top'},
+                    legend: { position: 'top' },
                     title: {
                         display: true,
                         text: `Budgeted amount vs. amount spent so far for ${getCurrMonthYr(new Date())}`
@@ -662,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: {display: true, text: 'Amount in dollars'}
+                        title: { display: true, text: 'Amount in dollars' }
                     }
                 }
             }
@@ -688,9 +695,9 @@ document.addEventListener('DOMContentLoaded', function () {
             return date.toLocaleString(undefined, { month: 'short', year: '2-digit' });
         }
 
-    function getMonthKey(date) {
-        return date.toISOString().slice(0, 7); 
-    }
+        function getMonthKey(date) {
+            return date.toISOString().slice(0, 7);
+        }
 
         const budgetLinePlugin = {
             id: 'budgetLine',
