@@ -121,14 +121,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const goalIdFromSavings = entry.savingsContribution?.goalId ?? null;
         const goalIdFromContribution = entry.contribution?.goalId ?? null;
         const resolvedGoalId = goalIdFromSavings ?? goalIdFromContribution;
+        // if goal was deleted, show goal if instead of name
         const goalName = resolvedGoalId != null ? goalNameById(resolvedGoalId) : '';
         if (entry.savingsContribution) {
             contribText = `Contributed $${Number(entry.savingsContribution.amount || 0).toFixed(2)}${goalName ? ` to ${goalName}` : ''}`;
         } else if (entry.contribution && entry.contribution.enabled) {
+            const v = entry.contribution.value || 0;
             if (entry.contribution.type === 'all') {
                 contribText = goalName ? `Contributed all to ${goalName}` : 'Contributed all to goal';
+            } else if (entry.contribution.type === 'percent') {
+                contribText = `Contributed ${v}%${goalName ? ` to ${goalName}` : ' to goal'}`;
             } else {
-                contribText = `Contributed ${entry.contribution.type === 'percent' ? v + '%' : '$' + v}${goalName ? ` to ${goalName}` : ' to goal'}`;
+                contribText = `Contributed $${v}${goalName ? ` to ${goalName}` : ' to goal'}`;
             }
         }
 
